@@ -601,7 +601,7 @@ class BattleRandom{
  * GAME_VERSION はHTML公開ごと、SAVE_FORMAT_VERSIONは保存構造変更時、
  * BATTLE_CONTENT_REVISIONは復元結果へ影響する戦闘定義変更時だけ更新する。
  */
-const GAME_VERSION="9.7.74";
+const GAME_VERSION="9.7.75";
 const SAVE_FORMAT_VERSION=5;
 const BATTLE_CONTENT_REVISION="battle-content-9.7.70";
 
