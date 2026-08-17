@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>戦旗水滸伝 v9.7.74</title>
+<title>戦旗水滸伝 v9.7.75</title>
+<!-- v9.7.75：GitHub Pages分割版の戦闘マップ表示方式を限定修正。v9.7.74でstage-map-assets.jsから巨大data URLをCSSカスタムプロパティへ渡していた方式を廃止し、v9.7.73で使用していた各章マップの直接background-image:data URL指定をstage-map-assets.cssへそのまま外部化した。第1章のトリミング、第2〜9章の表示寸法・位置、地形SVG/road非表示条件、全9章のマップ画像Base64はv9.7.73から変更しない。ゲーム仕様・戦闘計算・AI・能力値・保存形式schema 5・戦闘内容版battle-content-9.7.70は変更しない。 -->
 <!-- v9.7.74：GitHub Pages公開用の7ファイル構成へ分割。HTML/CSSはindex.html、ゲーム本体はgame.js、画像は戦闘マップ・人物顔・タイトル/勝敗画面・戦闘エフェクトの4責務へ分離し、BGM/SEはaudio-assets.jsへ分離。全素材はv9.7.73のBase64内容を変更せず移動のみ。ゲーム仕様・戦闘計算・AI・能力値・保存形式schema 5・戦闘内容版battle-content-9.7.70は変更しない。 -->
 <!-- v9.7.73：第三章「生辰綱奪取」の北端脱出旗を、護送隊壊滅イベント前から常時表示するよう変更。脱出旗の表示だけを先行させ、脱出ゾーンの有効化・勝利条件・raid_escapeの内部進行は従来どおり護送車を含む初期護送部隊壊滅後に開始する。保存形式schema 5・戦闘内容版battle-content-9.7.70・第8章AI・戦闘計算・能力値・画像音源は変更しない。 -->
 <!-- v9.7.72：B5追補修正。interaction.previousが意味検証でnullへ正規化された移動済み未確定部隊について、B15系の操作ロック案内が「戻る」で移動前へ戻せると誤表示しないよう修正。previousが残っている場合だけ従来の戻る案内を表示し、previousがない場合は現在の部隊の行動完了を求める。操作ロック・行動完了経路・B15/B21/B22・第8章AI・戦闘計算・保存形式schema 5・戦闘内容版battle-content-9.7.70・画像音源は変更しない。 -->
@@ -211,54 +212,7 @@ background:linear-gradient(135deg,#304d5e,#162a35 56%,#261d18);box-shadow:0 6px 
 /* v9.7.16：撹乱成功記号は1ターン「？」・2ターン「！」とも盤面オーバーレイで表示し、素材側のフェードを生かしながら正確に半マス上へ移動する。 */
 .confusion-symbol-effect{position:absolute;left:0;top:0;object-fit:contain;transform:translate(-50%,-50%);z-index:19;pointer-events:none;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 0 6px rgba(255,196,0,.58));animation:confusionSymbolRise 720ms ease-out both}
 @keyframes confusionSymbolRise{0%{transform:translate(-50%,-50%) translateY(0)}100%{transform:translate(-50%,-50%) translateY(var(--confusion-rise-distance))}}
-/* 第一章専用：8×16の一枚物戦闘マップ背景 */
-/*
- * 第一章背景画像のトリミング表示（例外対応）
- *
- * 画像生成時に、正しい8×16盤面の外側へ
- * 左0.5マス・右0.5マス・上0.5マス・下1.5マス分の余白が残った。
- * 本来は画像側で余白を除去すべきだが、画像生成では正確な除去が安定しなかったため、
- * 第一章に限りCSSで正しい盤面範囲をトリミング表示する。
- *
- * 元画像は横9マス×縦18マス相当なので、背景を縦横112.5%へ拡大する。
- * 左右余白は同量のため横位置は50%。縦余白は上0.5・下1.5なので、
- * 余剰2マスのうち上側25%を除外する位置として縦位置を25%にする。
- * 疑似要素自体の大きさは変えず、背景画像だけを補正するため、
- * 部隊・選択表示・盤面演出のクリップ範囲には影響しない。
- */
-.board.stage-one-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-one-map-image);background-size:112.5% 112.5%;background-position:50% 25%;background-repeat:no-repeat}
-.board.stage-one-map .cell{z-index:1}
-.board.stage-one-map .cell>svg,.board.stage-one-map .cell>.road{display:none}
-/* 第二章専用：承認済み8×16の一枚物戦闘マップ背景 */
-.board.stage-two-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-two-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
-.board.stage-two-map .cell{z-index:1}
-.board.stage-two-map .cell>svg,.board.stage-two-map .cell>.road{display:none}
-.board.stage-three-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-three-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
-.board.stage-three-map .cell{z-index:1}
-.board.stage-three-map .cell>svg,.board.stage-three-map .cell>.road{display:none}
-/* 第四章専用：添付された8×16の一枚物戦闘マップ背景 */
-.board.stage-four-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-four-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
-.board.stage-four-map .cell{z-index:1}
-.board.stage-four-map .cell>svg,.board.stage-four-map .cell>.road{display:none}
-
-/* 第五章専用：採用済み8×16の一枚物戦闘マップ背景 */
-.board.stage-five-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-five-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
-.board.stage-five-map .cell{z-index:1}
-.board.stage-five-map .cell>svg,.board.stage-five-map .cell>.road{display:none}
-/* 第六章専用：8×20の一枚物戦闘マップ背景 */
-.board.stage-six-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-six-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
-.board.stage-six-map .cell>svg,.board.stage-six-map .cell>.road{display:none}
-/* 第七章専用：採用済み8×20の一枚物戦闘マップ背景 */
-.board.stage-seven-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-seven-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
-.board.stage-seven-map .cell{z-index:1}
-.board.stage-seven-map .cell>svg,.board.stage-seven-map .cell>.road{display:none}
-/* 第八章専用：承認済み8×16の一枚物戦闘マップ背景 */
-.board.stage-eight-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-eight-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
-.board.stage-eight-map .cell{z-index:1}
-.board.stage-eight-map .cell>svg,.board.stage-eight-map .cell>.road{display:none}
-.board.stage-nine-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-nine-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
-.board.stage-nine-map .cell{z-index:1}
-.board.stage-nine-map .cell>svg,.board.stage-nine-map .cell>.road{display:none}
+/* 戦闘マップ固有CSSは stage-map-assets.css へ分離 */
 
 .cell{position:relative;width:var(--cell);height:var(--cell);padding:0;border:1px solid #3d2c1847;background:transparent;overflow:hidden;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none}
 .cell svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.road{z-index:1}.unit{z-index:5;inset:4%!important;width:92%!important;height:92%!important;transform-origin:50% 52%;filter:drop-shadow(0 2px 2px #0005)}
@@ -1089,6 +1043,7 @@ body.longpress-status-open .board-wrap{
 @media (min-width:720px){.title-logo-layer{top:8%}.title-meta{font-size:13px}.title-prompt{font-size:15px}}
 /* v9.3.35：行動コマンド上段の表示判定を修正。操作中または情報表示中の味方部隊だけに表示し、行動済み・行動不能でも弓撃・突撃・計略の残り回数を確認可能にした */
 </style>
+<link rel="stylesheet" href="stage-map-assets.css">
 </head>
 <body>
 
@@ -1106,7 +1061,7 @@ body.longpress-status-open .board-wrap{
 </div>
 <main class="app">
 <header class="header stage-header-source" aria-hidden="true">
-  <h1>戦旗水滸伝 <span style="font-size:.58em;opacity:.82">v9.7.74</span></h1>
+  <h1>戦旗水滸伝 <span style="font-size:.58em;opacity:.82">v9.7.75</span></h1>
   <div id="stageTitle" class="sub">ステージ選択</div>
 </header>
 
@@ -1177,7 +1132,7 @@ body.longpress-status-open .board-wrap{
 <!-- v9.5.6：戦闘中の章説明・勝敗条件は常時表示せず、ステージ情報ボタンで一時オーバーレイを開き、画面タップで閉じる。 -->
 <div id="stageInfoOverlay" class="stage-info-overlay" aria-hidden="true">
   <div class="stage-info-card">
-    <div class="stage-info-game">戦旗水滸伝 <span>v9.7.74</span></div>
+    <div class="stage-info-game">戦旗水滸伝 <span>v9.7.75</span></div>
     <div id="stageInfoTitle" class="stage-info-title"></div>
     <div id="stageInfoDescription" class="stage-info-description"></div>
     <div class="stage-info-status">
@@ -1198,7 +1153,7 @@ body.longpress-status-open .board-wrap{
 
 <div id="battleStatusOverlay" class="stage-info-overlay" aria-hidden="true">
   <div class="stage-info-card">
-    <div class="stage-info-game">戦旗水滸伝 <span>v9.7.74</span></div>
+    <div class="stage-info-game">戦旗水滸伝 <span>v9.7.75</span></div>
     <div class="stage-info-title">戦況</div>
     <div id="log" class="battle-status-log"></div>
     <div class="stage-info-hint">画面をタップすると閉じます</div>
@@ -1207,7 +1162,7 @@ body.longpress-status-open .board-wrap{
 
 <div id="strategyGuideOverlay" class="stage-info-overlay" aria-hidden="true">
   <div class="stage-info-card">
-    <div class="stage-info-game">戦旗水滸伝 <span>v9.7.74</span></div>
+    <div class="stage-info-game">戦旗水滸伝 <span>v9.7.75</span></div>
     <div class="stage-info-title">戦術指南</div>
     <div class="strategy-guide-content">
       <h3>基本操作</h3>
@@ -1367,7 +1322,6 @@ body.longpress-status-open .board-wrap{
 </div>
 
 
-<script src="stage-map-assets.js"></script>
 <script src="portrait-assets.js"></script>
 <script src="screen-assets.js"></script>
 <script src="battle-effect-assets.js"></script>
