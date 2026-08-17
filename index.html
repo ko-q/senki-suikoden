@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>戦旗水滸伝 v9.7.74</title>
+<!-- v9.7.74：GitHub Pages公開用の7ファイル構成へ分割。HTML/CSSはindex.html、ゲーム本体はgame.js、画像は戦闘マップ・人物顔・タイトル/勝敗画面・戦闘エフェクトの4責務へ分離し、BGM/SEはaudio-assets.jsへ分離。全素材はv9.7.73のBase64内容を変更せず移動のみ。ゲーム仕様・戦闘計算・AI・能力値・保存形式schema 5・戦闘内容版battle-content-9.7.70は変更しない。 -->
+<!-- v9.7.73：第三章「生辰綱奪取」の北端脱出旗を、護送隊壊滅イベント前から常時表示するよう変更。脱出旗の表示だけを先行させ、脱出ゾーンの有効化・勝利条件・raid_escapeの内部進行は従来どおり護送車を含む初期護送部隊壊滅後に開始する。保存形式schema 5・戦闘内容版battle-content-9.7.70・第8章AI・戦闘計算・能力値・画像音源は変更しない。 -->
+<!-- v9.7.72：B5追補修正。interaction.previousが意味検証でnullへ正規化された移動済み未確定部隊について、B15系の操作ロック案内が「戻る」で移動前へ戻せると誤表示しないよう修正。previousが残っている場合だけ従来の戻る案内を表示し、previousがない場合は現在の部隊の行動完了を求める。操作ロック・行動完了経路・B15/B21/B22・第8章AI・戦闘計算・保存形式schema 5・戦闘内容版battle-content-9.7.70・画像音源は変更しない。 -->
+<!-- v9.7.71：B5修正。保存データのinteraction.previousを、型・盤内・向きだけでなく、選択部隊の移動前位置として意味的に成立するかまで検証する。未移動部隊では現在位置・現在向きとの一致、移動済み未確定部隊では元位置が空き・進入可能・現在位置とは異なることに加え、地形移動コスト上その部隊の移動力内で現在位置へ到達可能かを確認する。不正なpreviousだけをnullへ正規化し、戦闘データ全体は破棄しない。保存形式schema 5、戦闘内容版battle-content-9.7.70、第8章AI、戦闘計算・能力値・画像音源は変更しない。 -->
+<!-- v9.7.70：第8章「大名府・獄門脱出」を再調整。A1・B1・G1・H1・B2・G2の騎馬隊6隊を削除。従来の門外展開AIを第8章追捕隊専用の継続追撃AIへ変更し、門内では二列門路へ前詰め、門外でもプレイヤー側へ進める限り前進を継続する。開始時に隣接している場合は従来どおり突撃または通常攻撃、移動後に隣接した場合は通常攻撃のみ。プレイヤーへ一歩も前進できない場合だけ有効な計略、次に遠距離攻撃を使用する。門内弩隊も同じ追撃AIへ統合し、移動後の弓撃は行わない。保存形式schema 5は維持し、戦闘内容版をbattle-content-9.7.70へ更新する。 -->
+<!-- v9.7.69：C9・C10修正。弓撃／投擲・突撃の対象選択中に無効な敵をタップしても選択カーソルを移動せず、現在の操作部隊を維持したまま有効な対象を選ぶよう案内する。行動確定後の最終方向指定で非隣接マスをタップした場合も無反応にせず、状態を変えずに隣接マスを選ぶよう案内する。B22・B23・B24、戦闘計算・AI・能力値・保存形式schema 5・戦闘内容版battle-content-9.7.60・画像音源は変更しない。 -->
+<!-- v9.7.68：B22・B23修正。移動仮確定中（hasMoved=true・hasActed=false・actionCommitted=false）の部隊がいる場合はターン終了を禁止し、ターン終了ボタンも無効化する。通常の未行動部隊だけが残る場合の確認付きターン終了は従来どおり維持。未移動部隊の操作中に固定待機・幻術・撹乱・行動済みの味方を選んだ場合は、現在の操作状態を安全に解除してからその部隊を情報閲覧対象として表示し、見た目とselectedUnitIdが分離しないようにした。移動仮確定後の別部隊選択禁止（B15）、B21の直接方向指定、B24の盤端で盤外を手動指定できない仕様、戦闘計算・AI・能力値・保存形式schema 5・戦闘内容版battle-content-9.7.60・画像音源は変更しない。 -->
+<!-- v9.7.67：B21修正。移動仮確定後のcommandモードで、赤い隣接敵は通常攻撃を優先し、黄色い隣接方向枠（空きマス・味方マス）は直接タップでその方向を向いて行動終了できるようにした。待機は、敵方向へ攻撃せず向きたい場合や移動せず方向転換したい場合の純粋な方向指定として維持。command時の方向枠は敵マスへ表示せず、案内文・戦術指南も新操作へ合わせた。戦闘計算・AI・能力値・保存形式schema 5・戦闘内容版battle-content-9.7.60・画像音源は変更しない。 -->
+<!-- v9.7.66：B20修正。勝利・敗北演出のフェード中からEnter／Spaceの既定動作を抑止し、表示完了後は長押しによるキーリピートを受理しないようにした。フェード完了前の入力では演出を終了せず、完了後に新しく押したEnter／Spaceまたはタップだけで進行する。スマホのタップ操作、演出時間、戦闘計算・AI・能力値・保存形式schema 5・戦闘内容版battle-content-9.7.60は変更しない。 -->
+<!-- v9.7.65：勝敗・ステージ遷移レビューで確認した2点を限定修正。ステージ選択ボタンの初回音声準備待ちにstageLaunchRequestId世代管理を追加し、別ステージ選択・セーブ／リカバリー読込開始・ステージ選択への入り直し・正式なloadStage開始で古い待機要求を無効化する。ロード一覧を開閉しただけでは要求を失効させない。勝利・敗北演出DOMは追加直後にpreventScroll付きでフォーカスし、将来のPC／キーボード操作でも既存のEnter／Space受付をそのまま利用できるようにした。戦闘計算・AI・能力値・保存形式schema 5・戦闘内容版battle-content-9.7.60は変更しない。 -->
+<!-- v9.7.64：B18修正。戦闘途中でステージ選択へ戻る／勝敗が確定した際に、突撃の地鳴りSEと広域幻術開始SEが残留する可能性を解消。両SEの再生Sourceを追跡し、読込待ち中の遅延再生もpendingフラグで無効化できるようにした。stopBattleTransientAudioから両SEを停止し、戦闘画面外へ持ち越さない。C8の全SE共通管理には拡張しない。戦闘計算・AI・能力値・保存形式schema 5・戦闘内容版battle-content-9.7.60は変更しない。 -->
+<!-- v9.7.63：非同期エフェクト／音声処理レビューで確認した競合を限定修正。プレイヤーの移動・通常攻撃・弓撃／投擲・突撃・撹乱／幻術・火計／水計をbattleSessionIdへ紐付け、戦闘破棄後に旧行動のawait後処理やrunActionResolutionのfinallyが新戦闘の描画・勝敗判定・入力ロックへ干渉しないようにした。タイトルBGMとステージ選択BGMへRequestId世代管理を追加し、読み込み中の画面遷移後に旧BGMが復活しないようにした。敗北BGMは必須SE準備後に非同期で先行ロードする。火計・水計・撹乱成功の長めの一時SEをまとめて停止するstopBattleTransientAudioを追加し、戦闘キャンセル時と勝敗確定時に残留音を止める。大規模な非同期／音声管理再設計（C8）は行わない。戦闘計算・AI・能力値・保存形式schema 5・戦闘内容版battle-content-9.7.60は変更しない。 -->
+<!-- v9.7.62：B15対策。移動先を仮確定した部隊は、行動完了または「戻る」で移動前へ戻るまで操作対象を固定する。移動後の command / strategy-level / strategy / bow / charge では、無効な別グリッドをタップしても選択・情報表示・カーソル光輪を移さず、「他のグリッドを選択するには、現在の部隊の行動を完了するか、「戻る」で移動前に戻ってください。」と案内する。有効な攻撃・計略・弓撃・投擲・突撃は従来どおり実行でき、何も行動しない場合の最終方向指定は「待機」から入る。移動後の未確定状態では、どのサブモードからでも「戻る」1回で移動前へ戻してロックを解除する。移動前に移動範囲外の敵グリッドをタップした場合は操作部隊の選択を解除して、その敵グリッドを通常の情報選択へ切り替える。戦闘計算・AI・保存形式schema 5・戦闘内容版battle-content-9.7.60は変更しない。 -->
+<!-- v9.7.61：UI分析で、投擲部隊の行動カットイン見出しだけが固定で「弓撃」と表示される不整合を修正。showActionCutInで遠距離行動時はprojectileActionName(unit)を使用し、弓弩術は「弓撃」、投擲術のみは「投擲」と表示する。戦闘ロジック・威力・射程・使用回数・保存形式schema 5・戦闘内容版battle-content-9.7.60は変更しない。 -->
+<!-- v9.7.60：能力データ正本を第4.7版へ更新し、第9章の固有人物データを人物管理へ統一。
+   徐寧・単廷珪・魏定国・武松・時遷・樊瑞・項充・李袞・郁保四と、曾頭市五虎の未登録4人（曾密・曾索・曾魁・曾昇）をCHARACTER_MANAGERへ追加し、79人から92人へ拡張。
+   第9章の該当15部隊定義はcreatePlayerCharacterUnit/createEnemyCharacterUnit経由へ移行し、ユニットID・陣営・配置・移動力・向き・顔画像・イベント参照は維持。
+   曾密88/78/62/66、曾索87/76/58/64、曾魁90/80/62/68を正本第4.7版として正式化。曾昇は84/72/55/60から91/72/55/60へ更新し、ゲームで有効にする遠距離技能は原作の飛刀を反映して投擲術を採用（2回・射程2の既存共通仕様）。
+   未リリース開発版のため旧戦闘セーブの互換移行は追加しない。保存形式schema 5は変更せず、戦闘結果へ影響するため戦闘内容版をbattle-content-9.7.60へ更新。 -->
+<!-- v9.7.59：戦術指南の幻術説明から、プレイヤーへ公開しない内部成功率計算の記述を削除した。プレイヤー向け説明は「対象の知略が低いほど成功しやすい」というゲーム上必要な情報だけに整理。幻術の内部計算、戦闘仕様、保存形式schema 5、戦闘内容版battle-content-9.7.58は変更しない。 -->
+<!-- v9.7.58：通常幻術の正式仕様を再確認し、v9.7.57で誤って変更した成功率計算を元へ戻した。通常幻術は使用者側を知略100相当として固定し、対象側の知略によって成功率が変化する。戦術指南もこの仕様へ訂正した。高廉の広域幻術も従来どおり知略100固定を維持する。v9.7.57から戦闘結果が変わるため戦闘内容版をbattle-content-9.7.58へ更新し、battle-content-9.7.57および従来版は既存セーブ移行対象として継続サポートする。保存形式schema 5は変更しない。 -->
+<!-- v9.7.57：コード分析時の仕様誤認により、通常幻術の知略100固定を不整合と判断して使用者の実知略参照へ変更した版。後に正式仕様が「通常幻術も使用者側は知略100相当固定で、対象側の知略により成功率が変化する」と確認されたため、この変更はv9.7.58で撤回した。保存形式schema 5は変更していない。 -->
+<!-- v9.7.56：戦闘処理分析で、投擲術の対象表示だけが弓撃用の射程2～3マス固定判定を残していた不整合を修正。盤面の遠距離攻撃対象マーカーを実行側と同じ isValidProjectileTarget() へ統一し、射程2固定の投擲で3マス先を攻撃可能表示しないようにした。実際の攻撃可否・ダメージ計算・保存形式schema 5・戦闘内容版battle-content-9.7.40は変更しない。 -->
+<!-- v9.7.55：状態管理分析で抽出したターン開始失敗時の復旧経路を追加。敵ターン終了後のstartPlayerTurnで例外が発生した場合、未完了の戦闘状態を残さず現戦闘を破棄してステージ選択へ安全に戻し、画面通知を表示する。通常のターン遷移・戦闘仕様・保存形式schema 5・戦闘内容版battle-content-9.7.40は変更しない。 -->
+<!-- v9.7.54：全体コード分析中に検出した公開版メタデータ不整合を修正。HTML表示はv9.7.53だった一方、内部GAME_VERSIONが9.7.52のままだったため9.7.54へ統一する。保存構造schema 5、戦闘内容版battle-content-9.7.40、ゲーム内容・人物データ・戦闘ロジックは変更しない。 -->
+<!-- v9.7.53：人物データ正本を第4.6版へ更新し、異名欄の役職・官職由来表記を整理。ゲーム登録済み人物では梁世傑の「梁中書」、蔡得章の「蔡九知府」、祝朝奉の重複異名「祝朝奉」を削除して「なし」とし、人物名・読み仮名・能力・兵力・戦闘ロジックは変更しない。陸謙・石宝は現行ゲーム未登録のため変更対象なし。保存形式schema 5、戦闘内容版battle-content-9.7.40は変更しない。 -->
+<!-- v9.7.52：人物データ正本を第4.5版へ更新し、Characterへ読み仮名を追加。固有人物の部隊詳細では人物名だけをruby表示し、異名・モブ・通常部隊情報には読み仮名を表示しない。梁中書／蔡九知府はExcel正本に合わせ、人物名を梁世傑／蔡得章、異名を梁中書／蔡九知府へ正規化。保存形式schema 5、戦闘内容版battle-content-9.7.40、能力・兵力・戦闘ロジックは変更しない。 -->
+<!-- v9.7.51：敗北専用曲の再生開始位置を先頭3.2秒から3.3秒へ微調整する。敗残将兵と敗北文字の表示倍率2/3、暗幕、5秒＋5秒のフェード、タップ終了、保存形式schema 5、戦闘内容版battle-content-9.7.40は変更しない。 -->
+<!-- v9.7.46：敗北時にも専用の3レイヤー演出を追加。半透明黒背景を初期表示し、敗残将兵を5秒、静止「敗北」文字を続く5秒で順次フェードインさせる。全レイヤー表示後は自動終了せず、明示的なタップまたはキーボード操作後にだけ演出を閉じて既存の敗北結果画面へ進む。提供素材は拡張子PNGだが実体が黒背景JPEGのため、素材を加工せずCSSのスクリーン合成で黒部分を透過相当として扱う。敗北ジングルは未実装とし、演出開始時に戦闘BGMだけを停止する。保存形式schema 5、戦闘内容版battle-content-9.7.40は変更しない。 -->
+<!-- v9.7.45：勝利演出の金色文字を正式採用済みの静止画像へ変更し、暗幕を初期表示、将兵5秒→勝利文字5秒→太陽光線3秒の順で完全フェードインさせる。全レイヤー表示後は静止状態を維持し、明示的なタップまたはキーボード操作後にだけ演出を閉じて勝利会話へ進む。専用勝利BGM「iron_gate_decree」を演出開始時から一度だけ再生し、戦闘切替時には残留音を停止する。保存形式schema 5、戦闘内容版battle-content-9.7.40は変更しない。 -->
+<!-- v9.7.44：戦闘勝利時の専用演出を追加。半透明黒背景、歓喜する将兵、40フレームの金色「勝利」、右上からの太陽光線を独立した4レイヤーで時間差表示する。勝利演出中は全面オーバーレイと既存の戦闘終了状態で操作を遮断し、演出完了後に勝利会話、続いて結果画面へ遷移する。多重起動を既存のfinishing／finishedで防ぎ、セッション切替・再戦・ステージ選択時には演出DOMを確実に除去する。保存形式schema 5、戦闘内容版battle-content-9.7.40は変更しない。 -->
+<!-- v9.7.43：セーブ／ロード選択画面のスマートフォン用列定義を修正し、枠番号と詳細を常に2列で表示する。起動時の自動復元確認にも選択時の実データを照合するガードを追加し、確認中に別タブから更新された場合は古い内容を読み込まない。自動復元枠の競合後は自動保存停止中を戦闘概要へ常設表示する。保存形式はschema 5、戦闘内容版はbattle-content-9.7.40のまま維持する。 -->
+<!-- v9.7.42：複数タブから同じ保存領域を操作した場合の整合性を強化。revisionだけでなく主・前回正常・一時データの実内容を更新前後に照合し、保存・削除・旧版移行・中断復旧・バックアップ復旧を枠単位の共通ロック下で処理する。ロード確認後に内容が変化した場合は読込を中止し、同じrevisionを持つ別内容も競合として検出する。競合後の自動保存は再試行せず停止する。保存形式はschema 5、戦闘内容版はbattle-content-9.7.40のまま維持する。 -->
+<!-- v9.7.41：手動セーブの公開仕様を変えず、保存共通処理の意味と一貫性を整理。枠一覧のデータと監視revisionを同じ一回の読取り結果から確定し、主データ・中断保存データ・前回正常データを区別して表示する。手動／自動復元で共用する生成・検査・復元処理をBattle／SaveLoad名称へ改め、ゲーム版・保存形式版・戦闘内容版の役割を定数化。戦闘内容を変更していないため、戦闘内容版はbattle-content-9.7.40、保存形式はschema 5のまま維持する。 -->
+<!-- v9.7.40：自動復元とは独立した手動セーブ20枠を追加。ステージ情報からセーブ／ロード、ステージ選択からロード選択を開ける。各枠は主・前回正常・一時保存の三世代で保護し、保存・読込前には確認を表示する。手動セーブは期限なし、履歴は直近30件・各200文字へ抑制し、自動復元の起動時確認と既存戦闘仕様は変更しない。 -->
+<!-- v9.7.39：難易度調整の最終確定として、第6章・第8章・第9章の制限ターンを18から20へ変更。第7章は18ターンのまま維持し、戦力・能力・配置・AI・罠・特殊技など他の戦闘仕様は変更しない。 -->
+<!-- v9.7.38：将来の任意セーブ・複数枠対応へ向け、schema 5の汎用セーブ基盤へ更新。固定ステージID・章番号・ターン上限を各ステージ定義の正本へ移し、stageIdから現行配列位置を解決する。保存形式の移行とゲーム内容改訂の移行を分離し、旧schema 1～4を現行形式へ変換。保存要求は常時受け付け、行動解決・会話・ターン準備中は次の安定状態まで保留する。枠単位の主データ・前回正常データ・一時データ・一覧情報をRepositoryで管理し、revisionとwriterIdによる別タブ競合検出を追加。戦闘用乱数を保存可能な専用生成器へ分離し、同じ保存状態から同じ行動を選んだ場合の結果を再現する。罠数・増援出現結果・マップ寸法・ターン上限の検査を強化し、保存成功後は失敗通知状態を解除する。手動セーブ画面・枠一覧画面・任意枠ロード操作は未実装。 -->
+<!-- v9.7.37：将来の任意セーブ・複数枠対応に先立ち、現行の1枠自動復元基盤を再設計。保存形式をschema 4へ更新し、ステージ安定ID・ゲーム版・内容改訂版・保存種別を記録。Unit全体の保存を廃止してHP・座標・向き・行動状態・状態異常・使用回数など可変状態だけを保存し、人物能力・技能・適性・表示名は現行ステージ定義から再構築する。旧schema 1～3は読み込み時に新形式へ移行。保存データの型・範囲・部隊ID・座標・重複・イベント・罠を検査し、不整合時は前回正常バックアップへ退避。localStorage操作を専用Repositoryへ分離し、一時キー検証・主データ・前回正常データの3段階で保護。render()連動保存を廃止して行動解決・方向確定・ターン準備完了など安定状態のみ保存し、ログは直近500件へ制限。保存失敗・全復元候補破損時は画面下部へ一度だけ通知する。任意セーブ画面・複数枠は未実装。 -->
+<!-- v9.7.36：ゲーム内で未使用となった職業データをCharacter・Unit・各ユニット定義から削除。解珍・解宝へ山野適正を明示し、地形移動補正を職業ではなく適正で判定するよう整理。水系適性判定からも職業参照を削除。第6章の火計・水計モブ隊長4隊は表示名を祝家荘隊長甲～丁へ変更し、内部ID・能力・配置・計略・専用AIは維持。旧復元データは職業項目を破棄し、解珍・解宝の山野適正と隊長名を現行仕様へ正規化する。 -->
+<!-- v9.7.35：第6章「三打祝家荘・総力戦」を追加調整。扈三娘の周囲へ既存と同等の扈家荘女騎馬隊2隊（A3・B2）と知略87の女軍師1隊（A5）を追加。A5の既存祝家荘兵丙は配置重複回避のためC5へ移動。E8・F8へ通常歩兵相当の祝家荘水軍2隊を追加し、水軍適正を付与。既存の水計隊長2隊へ水軍適正、火計隊長2隊へ山野適正を追加。明示的な「水軍適正」「山野適正」を地形適性判定で認識するよう拡張。 -->
+<!-- v9.7.34：戦術指南を整理。計略共通ルールとして射程3・城壁越し不可・残り使用回数は部隊ごとに管理されることを明記。当時は撹乱・幻術とも使用者と対象の知略差で成功率が変わると記載していたが、幻術の説明はv9.7.58で正式仕様に合わせて訂正した。火計・水計の中心撹乱は従来どおり成功時1ターンであることを区別。ゲームロジック・能力値・戦闘バランスは変更しない。 -->
+<!-- v9.7.33：戦術指南の文言を3点改善。弓撃・投擲の使用回数を「各該当部隊が1戦闘につき2回使用可能」と明確化。「向きと攻撃補正」の通常値は「通常部隊」ではなく「盾牌を持たない部隊」と表現し、連環馬・水軍適正など他特性との混同を防止。連環馬の説明は効果を変えず、平地・道／湿地／その他地形・計略の3文へ分割してスマートフォンでの可読性を改善。ゲームロジック・能力値・戦闘バランスは変更しない。 -->
+<!-- v9.7.32：戦術指南を現行ゲーム仕様に合わせて再整理。「戦略指南」を「戦術指南」へ改名し、弓撃・投擲は連続攻撃ではなく各1戦闘2回使用、突撃は通常攻撃より大きなダメージを与える技能として説明。向きと攻撃補正、状態異常、罠を独立項目化し、撹乱Lvの範囲・消費、通常罠・妖術罠の効果を明記。特殊技能へ連環馬を追加するが移動力は人物・部隊設定として指南には記載しない。盾牌は追加軽減ではなく通常の方向補正・弓投擲補正そのものを置き換える仕様であることを、向き補正側と特殊技能側の双方に明記。表示版数もv9.7.32へ統一。ゲームロジック・能力値・戦闘バランスは変更しない。 -->
+<!-- v9.7.31：戦略指南の説明構成を整理。攻撃と戦闘技能へ投擲を追加し、撹乱・幻術・火計・水計を「計略」として独立。水軍適正・山野適正・盾牌・幻術士を「特殊技能」として分離し、幻術士は幻術使用資格・幻術無効・妖術罠無効化の効果を明記。部隊能力詳細でも幻術使用者を「幻術士」特性として表示する。ゲームロジック・能力値・戦闘バランスは変更しない。 -->
+<!-- v9.7.30：幻術・撹乱・火計・水計の視覚／音響エフェクト完成に伴い、演出確認用テスト設定を解除。第7章の広域幻術テスト配置と第9章の火計・水計テスト配置をOFFにして正式配置へ復帰し、火計・水計の中心撹乱100％成功テストもOFFにして従来の統率・知略に基づく通常確率判定へ復帰。テスト用コード自体は再確認時に即再有効化できるよう残す。 -->
+<!-- v9.7.29：撹乱成功専用SE「8bit_magic1.mp3」を、黄色発光＋「？」／「！」の見た目エフェクト完了時に明示停止するよう変更。1ターンは共通演出完了時、2ターンは2回目の黄色発光を含む全演出完了時まで再生する。音源読み込みが演出完了後になった場合も遅れて鳴り始めないよう、保留再生を停止処理でキャンセルする。 -->
+<!-- v9.7.28：撹乱成立時の専用成功SEとして「8bit_magic1.mp3」をBase64埋め込み。従来のWeb Audio合成音は撹乱計略の実行音側としてそのまま残し、成功時だけ新SEを黄色発光＋「？」／「！」と同じタイミングで再生する。通常撹乱・突撃による撹乱・通常罠・火計・水計など既存の confusionSuccess() 共通経路へ適用し、幻術SE・被害SE・計略実行音は変更しない。 -->
+<!-- v9.7.27：敵ターンの行動開始時に白い選択リングを必ず行動部隊へ移し、その場攻撃・計略・撹乱休み等でも現在行動中の敵を示すよう修正。第3・6・9章のstrategy戦闘BGMを従来0.47の80％である0.376へ低減。水計本体SEをv9.7.26比1.2倍（0.92×1.25×1.2）へ増量し、水計被害SEは据え置き。火計・水計の中心撹乱をテスト中のみ100％成功させるフラグを追加し、falseへ戻すだけで従来確率計算へ即復帰できるようにした。第7章・第9章テスト配置は維持。 -->
+<!-- v9.7.26：妖術罠で幻術が成立した生存部隊に、紫発光＋ドクロ表示の直前で通常幻術と同じ幻術成功SEを追加。幻術師による妖術罠無効化時はSEなしのまま維持。あわせて第7章の広域幻術確認用テスト配置を再有効化し、高廉のみを敵として味方主力を周囲へ配置する既存テスト編成を復帰。 -->
+<!-- v9.7.25：火計・水計で被害色発光＋ダメージ数値が終わった時点で各被害SEを明示停止し、その後に撹乱成立時の専用成功SE＋黄色発光＋「？」を再生するよう音の重なりを解消。通常罠の1ターン撹乱成功時にも、共通見た目演出の直前に撹乱成功SEを追加。突撃の撹乱演出・SEは既存仕様を維持。 -->
+<!-- v9.7.24：水計の大水しぶき画像サイズをv9.7.23比1.25倍へ拡大し、水計専用SE「地震魔法2.mp3」の音量もv9.7.23比1.25倍へ調整。画像終了時のSE停止、水計被害SE「spo_ge_zabun03.mp3」、第9章テスト配置、火計演出、ダメージ計算・成功率などゲームルールは変更しない。 -->
+<!-- v9.7.23：水計専用SEを「地震魔法2.mp3」、水計被害SEを「spo_ge_zabun03.mp3」へ実装。水計専用SEは大水しぶき画像と同時再生し、画像終了時に停止。従来の汎用計略詠唱SEは水計では使用せず、水色発光＋ダメージ数値の開始時に被害SEを1回だけ再生する。火計演出、第9章テスト配置、ダメージ計算・成功率などゲームルールは変更しない。 -->
+<!-- v9.7.22：水計発動時、中心対象上に大きな水しぶき画像を1つ表示する本体演出を追加。SEは未実装のため既存の汎用詠唱SEのみ使用し、大水しぶき表示後に従来の白い効果範囲発光・水色発光・ダメージ数値・中心撹乱へ続く。第9章テスト配置、火計演出、ダメージ計算・成功率などのゲームルールは変更しない。 -->
+<!-- v9.7.21：火計SEを「火炎魔法2.mp3」へ差し替え、赤発光＋ダメージ数値の開始時に火炎被害SE「火炎魔法1.mp3」を1回だけ再生するよう追加。火計SEはv9.7.20どおり爆炎画像終了と同時に停止し、音量1.25倍・爆炎画像1.25倍も維持。火計・水計のダメージ計算、成功率、第9章テスト配置などゲームルールは変更しない。 -->
+<!-- v9.7.20：火計発動時の大爆炎エフェクトをさらに1.25倍へ拡大し、専用SE「kan_ge_kasai01.mp3」の音量も従来比1.25倍へ調整。爆炎画像の表示終了と同時に専用SEも停止するよう同期を強化。その他の火計演出、第9章テスト配置、ゲームルール・ダメージ計算・成功率・第7章正式配置は変更しない。 -->
+<!-- v9.7.18：第6章「三打祝家荘・総力戦」を強化。C9/F9の既存祝家荘隊長を水計75％・1回の専用隊長へ変更し、B13/G13へ火計75％・1回の前衛モブ隊長、A13/H13へモブ参謀を追加。専用隊長AIは全候補のプレイヤー/CPU被害を予測し、プレイヤー巻込み数を重視しつつCPU被害を減点、CPU撃破・大損害候補を除外し、1隊しか巻き込めず直接攻撃可能なら計略を温存する。安全で有効な候補がなければ火計・水計を使用しない。A13/H13への配置に伴い同地点を通常罠候補から除外。 -->
+<!-- v9.7.17：第7章の広域幻術確認用テスト配置を解除し、正式な敵味方初期配置・敵編成へ戻す。広域幻術本体、撹乱・幻術エフェクト、UI、戦闘ルールは変更しない。 -->
+<!-- v9.7.16：撹乱成功記号の表示方式を統一。1ターンの「？」も2ターンの「！」と同じ盤面オーバーレイへ移し、「？」は素材内余白を考慮して1.5倍表示。両記号とも対象セル中央から720msで正確に半マス上へ移動する。通常罠も既存の共通1ターン撹乱処理を通るため、計略・突撃等と同じ「黄発光1回＋？1.5倍＋半マス上昇」となる。その他の戦闘ルール・幻術・UI・第7章テスト配置は変更しない。 -->
+<!-- v9.7.15：通常罠の1ターン撹乱成功演出を、計略と同じ共通処理 flashConfusionSuccessByTurns() へ統一。罠側で黄色発光と「？」を個別に組み立てる処理を廃止し、表示タイミング・アニメーション・今後の変更追従を計略の1ターン撹乱と完全に同一経路にする。その他の罠・幻術・戦闘UI・第7章テスト配置は変更しない。 -->
+<!-- v9.7.14：通常罠を含む1ターン撹乱の「？」素材を本来の animated WebP（senki_disturb_questionmark_12f_720ms.webp）へ統一。戦闘画面の情報・操作パネルは上下切替を廃止した現行構造からさらに整理し、上部4ボタンの直下へ操作ドックを常時上固定して下方向へ伸ばす。上側スペーサーへ上部UI全体の実測高を反映し、下側スペーサーは0固定。keepCellVisible / centerBoardOnCell は上部オーバーレイ実高を可視上端として扱い、操作中部隊がパネル裏へ隠れないようにする。 -->
+<!-- v9.7.13：操作ドックの選択位置に応じた上／下切替を廃止し、戦闘マップ下端固定へ単純化。上側スペーサーは上部4ボタン分だけ、下側スペーサーは操作ドック表示分だけ確保する構造へ整理し、選択位置によるドック再配置・配置状態の保存復元を削除。可視セルアンカーによるスクロール位置維持は継続し、既存の自軍ターン中UI保持・戦闘ルール・第7章テスト配置は変更しない。 -->
+<!-- v9.7.12：自軍ターン中のUI表示と操作可否を分離。移動・攻撃・弓撃・突撃・計略・罠解決・会話など一時的な操作不能中でも、上部4ボタンと表示中の選択情報／操作ドックを消さず、その場で無効化して表示を維持する。これにより行動演出中のパネル点滅とスペーサー再計算による視覚的な上下動を抑止。通常罠の1ターン撹乱は、ダメージ演出完了後に黄色発光1回＋「？」アニメーションを明示的に同時再生する。第7章テスト配置・戦闘ルールは変更しない。 -->
+<!-- v9.7.11：自軍ターン中の上部4ボタン／操作ドック表示切替で盤面が微小に上下する問題を修正。スペーサー変更前に画面中央付近の可視セルをアンカーとして保持し、変更後も同じセルが同じ画面Y座標に残るよう scrollTop を1回だけ補正する。高さ計算は小数pxのまま統一し、ceil/round混在を廃止。通常罠の1ターン撹乱は共有の撹乱成功演出（黄色発光1回＋「？」）を使用するよう整理。第7章テスト配置・戦闘ルールは変更しない。 -->
+<!-- v9.7.10：2ターン撹乱成功の「！」が半マス上へ移動した際、セルの overflow:hidden で上側が切り取られる不具合を修正。「！」だけはセル内ではなく盤面直下の絶対配置オーバーレイとして描画し、対象セル中心を基準に同じ大きさで表示する。1ターンの「？」・黄色発光・成功判定・第7章テスト配置など他仕様は変更しない。 -->
+<!-- v9.7.9：撹乱成功の個別記号エフェクトを追加。1ターン成功は黄色い「？」、2ターン成功は黄色い「！」を表示し、2ターンの「！」だけ出現から消滅までに対象セルの半マス分上へ移動する。従来の黄色発光は維持し、2ターン成功時は黄色発光2回のまま。通常撹乱計略に加え、1ターン撹乱のみ発生する突撃・火計/水計中心撹乱・通常罠にも「？」を表示する。第7章テスト配置・幻術演出・成功率・効果ターン計算・戦闘ルールは変更しない。 -->
+<!-- v9.7.8：通常罠・妖術罠の被ダメージ演出を整理。罠ダメージは通常攻撃とは別の専用SE（会心の一撃2.mp3をBase64埋込）と白発光・ダメージ数値を同時再生し、ダメージ数値が消えた後に生存部隊のみ状態異常演出へ進む。通常罠は黄色発光1回、妖術罠は紫発光1回＋ドクロ1回。現行の罠は1ターン効果のため2回発光は行わない。妖術罠無効化時は従来どおりダメージ演出なし。第7章テスト配置は維持する。 -->
+<!-- v9.7.7：妖術罠で幻術を受けた場合にも、通常幻術と同じ個別ドクロエフェクトを追加。生存した対象へ既存の紫発光と同時に表示し、無効化時・失敗時・広域幻術の仕様は変更しない。 -->
+<!-- v9.7.6：状態異常成功エフェクトをターン数で統一。通常撹乱は1ターン成功=黄発光1回、2ターン成功=黄発光2回。広域幻術は既存の骸骨＋紫霧を発動時に必ず表示し、個別ドクロは出さず、各成功部隊を1ターン=紫発光1回、2ターン=紫発光2回とする。第7章は広域幻術確認用テスト配置を有効化。成功率・効果ターン計算・SE・戦闘ルールは変更しない。 -->
+<!-- v9.7.5：通常幻術の成功ターン数を視覚的に差別化。1ターン成功は従来どおり紫発光1回＋ドクロ1回、2ターン成功はドクロ1回のまま紫発光だけを2回連続させる。広域幻術・妖術罠・成功判定・効果ターン計算・SEは変更しない。 -->
+<!-- v9.7.4：通常幻術成功時のドクロ表示サイズを従来の1.5倍へ拡大。表示時間720ms、フェードイン／フェードアウト、既存の紫色成功発光・幻術成功SEとの同時再生、成功時のみ表示する条件は変更しない。 -->
+<!-- v9.7.3：通常の単体幻術が成功したとき、対象部隊上に紫のドクロ素材を720ms表示し、フェードインからフェードアウトする専用エフェクトを追加。既存の紫色成功発光と幻術成功SEは維持し、ドクロはそれらと同時再生する。広域幻術・妖術罠・失敗時には表示しない。ゲームロジック・成功率・状態付与・広域幻術演出は変更しない。 -->
+<!-- v9.7.2：下側情報パネルの積み上げ順を整理。選択マスの情報を「地形情報 → その地形上の部隊情報 → 操作情報」の順に表示するため、selectionInfoContainer 内で terrainInfoPanel を unitInfoPanel より上へ配置する。表示内容・判定ロジック・ゲーム仕様は変更しない。 -->
+<!-- v9.7.1：上部4ボタンパネルの表示同期を専用メソッドへ分離。render() 時だけでなく、自軍ターン開始処理の finally で playerTurnSetupInProgress を解除した直後にも表示状態を再評価する。これにより、自動処理終了後にユニットを選択するまでパネルが再表示されない不具合を修正。表示条件そのものは v9.7 と同じく isPlayerInteractionReady() とし、上端固定オーバーレイ＋表示時のみ上側スクロール余白を確保する方式、その他のゲーム仕様は変更しない。 -->
+<!-- v9.6.35：上部4ボタンパネルを戦闘マップ上端固定のオーバーレイへ変更。敵ターンでは非表示、自軍ターンへ切り替わった時点でユニット未選択でも表示し、自動処理・会話など操作不能中は表示したまま各ボタンを無効化する。表示中だけ実測高さ分の上側スクロール余白を追加し、上側配置の操作ドックが開く場合はその下へ重ならないよう連結して余白を延長する。表示・非表示や高さ変化では盤面の見えている位置を維持する。あわせて第七章の広域幻術確認用テスト配置を解除し、正式配置へ戻す。 -->
+<!-- v9.6.34：自軍ターン開始時の幻術自動行動を修正。幻術による同士討ちで、後続の自動処理対象部隊が先に撃破されていた場合、死亡部隊を検出した時点で全体ループを break していたため、それ以降の幻術部隊の自動行動まで省略される不具合があった。戦闘終了時だけ break し、死亡済み部隊は continue で個別に飛ばして後続部隊の自動行動を継続する。その他のゲーム内容は変更しない。 -->
+<!-- v9.6.33：幻術師の妖術罠無効化を追加。幻術使用者が妖術罠へ進入した場合は罠を消費するがダメージ・幻術状態を受けず、その地点で行動を終了して専用台詞を表示する。第五章「江州法場の救出」は宋江・晁蓋の脱出に加えて敵軍全滅でも勝利とする。第七章は広域幻術確認用テスト配置を再有効化し、高廉のみを敵として味方を周囲へ配置する。広域幻術の骸骨表示サイズを従来比1.2倍へ拡大。山野適正は現行どおり地形移動補正のみで、通常罠の見破り効果は追加しない。 -->
+<!-- v9.6.32：戦闘キャンセル時の復元状態解除を補強。cancelCurrentBattle() で saveLoadRestoring=false と pendingRecoverySnapshot=null を必ず設定し、復元開始後の requestAnimationFrame 待ち中などに別セッションへ切り替わった場合でも、古い復元中フラグや保留スナップショットが残って以後の保存を禁止し続けないようにする。通常の戦闘・復元成功経路・ゲーム内容は変更しない。 -->
+<!-- v9.6.31：復元処理失敗時のフェイルセーフを追加。復元対象ステージの初期描画または restoreBattleSnapshot の途中で例外が発生した場合、saveLoadRestoring を必ず解除し、失敗した復元データを破棄してステージ選択へ安全に戻す。復元失敗時の旧セッションも無効化し、中途半端な盤面・保存禁止状態・操作不能状態が残らないようにする。正常な復元経路・ゲーム内容は変更しない。 -->
+<!-- v9.6.30：非同期行動解決の例外耐性をさらに補強。runActionResolution が失敗した場合、既存の入力・操作状態復旧より先に checkResult() を安全に再評価し、ダメージ確定後の演出例外などで勝敗判定だけが未実行のまま残る状態を防ぐ。勝敗再評価自体で例外が発生しても別途捕捉して元の例外を上書きせず、その後は従来どおり味方操作状態を復旧する。通常の成功経路・ゲーム内容は変更しない。 -->
+<!-- v9.6.27：非同期例外時の状態復旧を補強。味方は runActionResolution 失敗時に、行動確定済みなら最終方向選択、未確定の移動済みなら移動後の行動選択へ復帰させ、途中modeや二重移動を防ぐ。敵AIは1部隊の行動中に例外が発生しても、その敵を行動済みとしてログ・診断を残し、次の敵へ処理を継続して敵ターン全体がロック停止しないようにする。 -->
+<!-- v9.6.26：行動確定後の非同期処理で例外が発生した場合の復旧を強化。runActionResolution が失敗したとき、味方の actionCommitted=true / hasActed=false の部隊が途中modeに残っていれば、入力ロック解除後に最終方向選択へ強制復帰させる。正常系の行動遷移や未確定移動の「戻る」仕様は変更しない。 -->
+<!-- v9.6.25：最終方向選択中のターン終了を禁止。行動確定済みだけでなく、移動後に何も行動せず方向選択へ入った未確定部隊も、方向確定または「戻る」による移動取消を終えるまでターン終了できない。未確定移動の「戻る」仕様自体は変更しない。 -->
+<!-- v9.6.24：状態管理共通ガードを追加整理。復元保存は会話・作戦条件表示中も禁止し、isPlayerInteractionReady は actionResolutionInProgress も直接確認する。canSelectAnotherUnit は strategy-level / strategy-resolving を含む操作専有モードを明示的に禁止し、requestEndTurn も共通の操作可能判定を使用してターン開始処理・会話・非同期解決中などからの終了経路を閉じる。validateInteractionState の安定状態判定も同じ条件へ揃える。 -->
+<!-- v9.6.23：別部隊選択可否の死んだ mode="attack" 条件を削除。actionCommitted 済み・最終方向未確定の部隊から別部隊を選ぼうとした場合は、「戻る」を案内せず最終方向指定を促す専用メッセージへ分岐し、不可逆確定後の操作案内を実際の状態規則と一致させる。 -->
+<!-- v9.6.22：隠し罠処理を移動アニメーションと同じ runActionResolution 内へ統合。罠ダメージ・状態異常・点滅・勝敗判定・反応会話・高唐州追加会話が完了するまで actionResolutionInProgress と入力ロックを維持し、中間状態の保存・次部隊操作を防止する。罠解決完了後は安定状態として復元スナップショットを保存予約する。 -->
+<!-- v9.6.21：味方ターン開始処理を保存禁止の不安定状態として管理。playerTurnSetupInProgress / playerTurnSetupSessionId を追加し、startPlayerTurn の援軍・寝返り・状態異常・幻術強制行動などが完了するまで復元スナップショット保存を禁止する。正常完了後だけ安定状態を保存し、セッション切替時に旧非同期処理が新戦闘の状態を解除しないよう保護する。 -->
+<!-- v9.6.20：actionCommitted を「戻る」「別部隊選択」の絶対ガードへ強化し、行動確定済み・最終方向未確定の部隊が例外経路から再操作される余地を閉じる。敵ターンも markUnitActionCompleted / resetUnitActionForTurn を使用して味方と同じ行動状態定義へ統一し、validateInteractionState の hasActed/actionCommitted 整合性検査を全生存部隊へ拡張。 -->
+<!-- v9.6.19：状態管理共通化の第四段階として validateInteractionState を追加。選択部隊・最終方向待ち・actionCommitted・hasActed・previous・facingCanUndoMovement・非同期行動解決などの矛盾を検出し、ゲーム進行は変更せず console.warn へ一度だけ診断を出す。render と復元保存時に安定状態を検査する。 -->
+<!-- v9.6.18：状態管理共通化の第三段階として beginActionResolution / endActionResolution / runActionResolution を追加。移動・攻撃・弓撃・突撃・計略・特殊戦法・敵AIの非同期行動を try/finally で管理し、例外時にも actionResolutionInProgress や入力ロックが残らない構造へ統一。 -->
+<!-- v9.6.17：部隊行動の状態変更を共通化。行動確定、方向選択への遷移、行動完了、未確定移動の取消を専用メソッドへ集約し、各処理から actionCommitted / hasActed / pendingFacingUnitId / mode などを直接変更する箇所を削減。ゲームルール自体は変更しない。 -->
+<!-- v9.6.16：状態判定の第一段階を共通化。canSaveBattleSnapshot / canUndoCurrentAction / canSelectAnotherUnit / isWaitingForFacing を追加し、復元保存可否・戻るボタン可否・別部隊選択可否・方向選択待ち判定を各処理の個別条件式から共通関数へ集約。ゲームルールや行動結果は変更しない。 -->
+<!-- v9.6.15：敵ターン中の保存復元を安定状態方式へ修正。敵1体の行動解決中は復元スナップショット保存を禁止し、行動完了・hasActed確定後だけ保存する。敵ターン終了時にhasActedをfalseへ戻す処理を廃止し、次回敵ターン開始時にのみ初期化することで、ターン移行中の復元で敵全員が再行動する問題を防止。 -->
+<!-- v9.6.11：行動確定と最終方向確定を分離。actionCommittedを追加し、計略・特殊戦法実行後は最終方向指定前でも行動を不可逆に確定する。戻るで移動・計略選択へ復帰できないようにし、保存復元でも行動確定済み部隊は最終方向指定だけを再開する。さらに行動/移動アニメーション処理中は復元用保存を行わず、中間状態の保存を防止する。 -->
+<!-- v9.6.10：第七章の広域幻術確認用テスト配置を撤去し、敵味方の初期配置・敵編成を正式な第七章仕様へ復元。広域幻術の骸骨＋紫霧エフェクト、効果音、その後の白い範囲発光の演出順はv9.6.9を維持。 -->
+<style>
+/* v9.6.8：高廉の広域幻術演出順を変更。骸骨＋紫霧の広域幻術エフェクトを最後まで再生した後に、従来の白い効果範囲発光を開始する。 */
+/* v9.6.4R：通常の部隊情報パネルへ40×48pxのミニ顔画像を右端に追加した比較版。画像は絶対配置とし、パネル自体の高さは変更しない。 */
+/* v9.6.3：部隊詳細の顔画像を1.5倍から1.25倍の135×160pxへ調整。詳細カードの顔画像列も135pxへ縮小し、スマホで情報欄の横幅を確保。 */
+/* v9.6.2：部隊詳細の顔画像を現行の1.5倍となる162×192pxへ拡大。詳細カードの顔画像列も拡張し、情報欄とのバランスを調整。 */
+/* v9.6.1：部隊詳細を長押しした際にAndroid Chrome等のブラウザ標準文字選択が同時発火する問題を修正。詳細オーバーレイ・詳細カード・通常部隊情報を文字選択不可とし、詳細表示時に既存Selectionも解除する。部隊詳細の兵力・移動・遠距離・突撃・計略・向き・地形は1項目1行へ整理。 */
+/* v9.6.0：部隊能力詳細を戦闘判断用に整理。伝承区分・出典・性格・専門技能・戦闘技能・特殊戦法の生データ・ダメージ計算式・地形説明・突撃回数根拠など下部の細字情報を廃止し、閉じ方の説明だけ残す。ゲーム上で実際に固有効果を持つ「水軍適正」「山野適正」「盾牌」「連環馬」は条件該当時のみ太字特性として表示する。騎乗戦闘や神行法など移動力から判断できる要素は特性表示しない。 */
+/* v9.5.27：戦闘復元時の二重移動を修正。移動済み・未行動部隊は再選択しても移動モードへ戻さず、移動後の攻撃・技能・計略・待機へ復帰する。復元スナップショットへ選択部隊・移動前位置などの操作途中状態を追加し、旧schema 1も互換読込する。 */
+/* v9.5.26：操作ドックの「行動コマンド／部隊名」見出し行を削除し、部隊情報・地形情報の直下へ行動ボタンを配置。操作ドックの動的スクロール余白は従来どおり実際のパネル高を測定して同期するため、見出し削除後の縮小した高さへ自動追従する。 */
+/* v9.5.25：v9.5.24の選択位置と反対側へ出す上下可変オーバーレイを維持しつつ、操作パネル表示中だけ表示側へ「パネル実高＋安全余白」分のマップ内部スクロール余白を動的追加。上余白の増減時は盤面の画面上位置を保存・補正して、パネル展開そのものでは見ている盤面を動かさない。パネル非表示時は余白を0へ戻す。対象選択中も部隊情報・地形情報を維持し、極端なcompact化は廃止。keepCellVisible/centerBoardOnCell/上下配置判定は可変上余白を含むコンテンツ座標へ対応。 */
+/* v9.5.21：部隊情報2行目に「移動」を追加し、方向の右へ表示。地形情報見出しは地形名を右端へ飛ばさず「地形情報：地形名」と左寄せで連続表示する。 */
+/* v9.5.20：戦闘画面を「上部サマリー＋残り全域のマップビューポート」へ再構成。部隊情報・地形情報・行動コマンドは通常レイアウトから外し、マップ下端へ重ねるフローティング操作ドックとした。ドックの出入りでマップ位置や表示領域を変化させず、古い100dvh-180/225px等の高さ計算を廃止。ドック実高を動的取得してマップ内部の可視下端とスクロール余裕へ反映し、選択部隊がドック裏に隠れる場合だけ必要最小限スクロールする。撹乱Lv選択・対象選択等ではコマンド領域を入れ替えて高さ増加を抑える。 */
+/* v9.5.19：通常部隊情報の見出し右端へ「長押しで詳細」を移し、盤面ユニットと部隊情報パネルのどちらの長押しでも能力詳細を表示可能にした。盤面の「済」文字を廃止し、行動済みの現在手番部隊は味方=濃い青・敵=濃い赤で表示。通常部隊情報の状態表記は「撹乱1」「幻術1」のように簡略化し、状態異常が残る場合は「行動済み」を重複表示しない。味方ターン開始時の増援・会話・撹乱・幻術など自動処理中は、処理完了まで上部操作ボタン・部隊情報・地形情報・行動コマンド・長押し詳細・盤面タップ情報を非表示/無効化する。 */
+/* v9.5.18：戦闘マップ外側に残っていた汎用panel装飾を撤去し、余白・背景・影のカード跡を除去。第3章の生辰綱護送車へ誤って表示されていた旧既定ラベル「船着き場待機」を廃止し、固定部隊のラベル未指定時は状態欄へ固有待機名を表示しない。ゲームロジックは変更しない。 */
+/* v9.5.17：上部UIを「ターン・進行・味方数・敵数」の1段サマリー＋味方ターン時のみ4ボタン（ステージ情報・戦況・戦略指南・ターン終了）へ再編。戦略指南は最下部から一時オーバーレイへ移動。部隊情報・地形情報・行動コマンドを同じ操作ドックへ集約し、「部隊情報：名前」「地形情報：地形名」の簡潔表示へ変更。敵ターン中は部隊情報・地形情報・行動コマンド・上部ボタン列を非表示。 */
+:root{
+  --cell:min(11.2vw,70px);--ink:#281f16;--paper:rgba(255,250,240,.97);
+  --line:#72583a;--blue:#286483;--red:#913c31;--green:#456d39;--gold:#e8b845
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* v9.5.16：通常部隊情報を簡素化し、顔画像・異名・行動指示を除外。異名は長押し詳細だけで名前の左に表示し、異名なしは名前を左詰め。行動指示は行動コマンド下段へ移し、「戻る」を左側の小幅ボタン化。敵ターン中は地形情報パネルも非表示。 */
+/* v9.5.15：戦闘上部のフェーズ指示表示を廃止し、味方/敵ターン名の下へ現在ターン数を「12 / 15」形式で表示。ターン終了ボタンを行動コマンドから戦闘上部へ移し、味方ターン中だけ表示。未行動確認と全員行動済み時のホタル発光は維持。 */
+/* v9.5.14：行動コマンドのパネル全体を、操作可能な味方部隊を選択している間だけ表示するよう変更。未選択・敵部隊/行動不能部隊の情報確認・敵ターン中は非表示。 */
+/* v9.5.13：敵ターン中は行動コマンドのパネル全体を非表示にし、敵の行動と戦闘マップを見やすくした。味方ターン開始時に自動で再表示する。 */
+/* v9.5.12：戦況ログをプレイヤー向け戦闘履歴へ整理。移動・方向転換・内部計算式などの低価値ログを削除し、攻撃結果・技能・状態異常・敗走・増援・寝返り・任務更新・ターン区切りを中心に表示。複数対象計略は結果を集約し、履歴保持数を16件から500件へ拡大。 */
+/* v9.5.11：戦闘上部の部隊数表示を味方／敵の縦2段へ変更。部隊情報・能力詳細では異名がある固有人物だけ名前横へ小さく表示し、異名なし・モブでは表示しない。 */
+/* v9.5.10：第一章・第四章・第八章の脱出ステージに敵軍殲滅による勝利条件を追加。従来の脱出勝利条件と敗北条件は維持。 */
+/* v9.5.9：常時表示していた「戦況」を上部の一時オーバーレイへ移し、味方ターン中のみタップで表示・画面タップで閉じる方式へ変更。第三章は生辰綱奪取後、追捕軍出現後の敵軍全滅も勝利条件に追加。 */
+/* v9.5.8：移動前の行動コマンドにも「待機」を常時表示し、その場から移動せず最終方向だけ指定して行動終了できるように変更。待機後の方向指定中は「戻る」で移動選択へ戻れる。 */
+/* v9.5.7：部隊能力詳細を長押し後の固定表示へ変更し、指を離しても維持、次の画面タップで閉じる。敵ターン中はステージ情報・部隊情報操作を無効化。 */
+/* v9.5.6：ステージ情報を押下中表示からタップ開閉方式へ変更。情報表示後は画面タップで閉じ、音声・ステージ選択はオーバーレイ内の通常ボタンで操作する。 */
+/* v9.5.5：最終ターン終了時は敵ターンへ移行せず即時敗北。ステージ情報の押下中オーバーレイへ音声・ステージ選択を統合し、スライド＆リリース操作を追加。 */
+/* v9.5.4：上部UIを圧縮。章情報は押下中のみ一時オーバーレイ表示。全章にターン上限（1～5章15、6～9章18）を追加。 */
+/* v9.5.22：操作ドックを戦闘マップDOMから分離し、画面下端から展開する固定ボトムシートへ変更。パネル高によるマップスクロール補正・余白追加を撤去し、パネル開閉ではマップ位置を変更しない。対象選択・方向指定中は操作ドックをコンパクト表示する。 */
+/* v9.5.25：操作ドックを現在見えているマップ領域の選択部隊と反対側へ出す適応型オーバーレイへ変更。選択時に上半分なら下側、下半分なら上側へ配置し、同一部隊の行動完了まで配置を固定する。パネル展開ではマップ位置・高さ・scrollTopを変更しない。対象選択中は情報部を隠してコンパクト化し、盤面の可視領域を確保する。 */
+/* v9.5.23：中央の戦闘マップを固定アンカー化。上部戦闘概要は固定高の上部ゾーン下端へ固定し、ボタン列の表示時は上方向へ展開する。部隊情報・地形情報・行動コマンドはマップ直後の通常フローへ戻し、マップへ重ならず下方向へ展開する。v9.5.22のfixedボトムシートを撤去し、パネル開閉でマップ位置・高さ・内部scrollTopを変更しない。 */
+body{margin:0;min-height:100vh;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow-anchor:none;
+background:radial-gradient(circle at 50% -10%,rgba(255,255,255,.75),transparent 42%),linear-gradient(#dcc79f,#b58d59)}
+button{font:inherit}.app{max-width:980px;min-height:100vh;min-height:100dvh;margin:auto;padding:10px;position:relative;overflow:visible}
+.header{padding:12px 14px;border:1px solid #382518;border-radius:16px;color:#fff7e7;
+background:linear-gradient(135deg,#304d5e,#162a35 56%,#261d18);box-shadow:0 6px 18px #2d1d0f55}
+.header h1{margin:0;font-family:serif;font-size:clamp(24px,4vw,36px)}
+.header .sub{margin-top:4px;color:#e7d5b6;font-size:13px}
+/* v9.5.4：戦闘中に常時表示していた大きなタイトルカードを廃止。内容は一時ステージ情報へ移す。 */
+.stage-header-source{display:none}
+.panel{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--paper);box-shadow:0 4px 13px #3a261226}
+.battle-top-zone{position:relative;height:40px;min-height:40px;overflow:visible}
+.battle-summary-panel{position:absolute;left:0;right:0;bottom:0;margin:0;padding:6px 8px;border-radius:12px;transform-origin:bottom center}
+.battle-summary{display:grid;gap:5px}
+.battle-summary-status{display:flex;align-items:center;gap:7px;min-width:0;white-space:nowrap}
+.battle-summary-main{display:flex;align-items:baseline;gap:6px;min-width:0;margin-right:auto}
+.turn{font-size:14px;font-weight:900;line-height:1.15;white-space:nowrap}
+.turn-progress{font-size:13px;font-weight:1000;line-height:1.15;color:#5a4630;white-space:nowrap}
+.auto-save-stopped-notice{flex:0 0 auto;padding:3px 6px;border:1px solid #7c2c25;border-radius:8px;background:linear-gradient(#a94f41,#7a2e27);color:#fff;font-size:10px;font-weight:950;line-height:1.2;white-space:nowrap;box-shadow:0 1px 3px #3a261226}
+.auto-save-stopped-notice[hidden]{display:none!important}
+.unit-count-stack{display:flex;align-items:center;gap:5px}
+#playerCountText,#enemyCountText{padding:3px 6px;border-radius:8px;color:#fff;font-size:11px;font-weight:900;line-height:1.2;text-align:center;white-space:nowrap}
+.battle-summary-buttons{position:absolute;top:6px;left:6px;right:6px;z-index:52;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;align-items:stretch;padding:6px;border:1px solid #9e8058;border-radius:12px;background:rgba(246,237,219,.985);box-shadow:0 8px 20px #2d1d0f45;backdrop-filter:blur(8px);overflow-anchor:none;pointer-events:auto}
+.battle-summary-buttons[hidden]{display:none!important}
+.stage-info-button,.battle-status-button,.strategy-guide-button,.battle-end-button{min-height:36px;padding:5px 4px;border:1px solid #66513a;border-radius:9px;font-weight:900;font-size:11.5px;line-height:1.15;box-shadow:0 1px 3px #3a261226;touch-action:manipulation;user-select:none;-webkit-user-select:none;white-space:nowrap}
+.stage-info-button{background:linear-gradient(#fff8e9,#dfceb0);color:#3b2b1e}
+.battle-status-button{background:linear-gradient(#eef5f3,#cadbd5);border-color:#50665f;color:#273f38}
+.strategy-guide-button{background:linear-gradient(#f3eef8,#d9cce8);border-color:#6e5b82;color:#463854}
+.battle-end-button{color:#fff;background:linear-gradient(#39779b,#21536f)}
+.battle-end-button:disabled{opacity:.55;color:#d8e0e4;background:linear-gradient(#70818b,#586b75)}
+@media(max-width:380px){
+  .battle-summary-status{gap:5px}
+  .turn{font-size:13px}
+  .turn-progress{font-size:12px}
+  .auto-save-stopped-notice{padding:3px 4px;font-size:9.5px}
+  .unit-count-stack{gap:3px}
+  #playerCountText,#enemyCountText{padding:3px 5px;font-size:10.5px}
+  .battle-summary-buttons{gap:3px}
+  .stage-info-button,.battle-status-button,.strategy-guide-button,.battle-end-button{min-height:34px;padding:4px 2px;font-size:10.5px}
+}
+#playerCountText{background:linear-gradient(#5e806b,#3e5e4c)}
+#enemyCountText{background:linear-gradient(#a94f41,#7a2e27)}
+.stage-info-overlay{position:fixed;inset:0;z-index:86;display:flex;align-items:flex-start;justify-content:center;padding:max(66px,calc(env(safe-area-inset-top) + 56px)) 12px 12px;background:rgba(27,19,12,.24);opacity:0;visibility:hidden;pointer-events:none}
+.stage-info-overlay.show{opacity:1;visibility:visible;pointer-events:auto}
+.stage-info-card{width:min(680px,100%);max-height:calc(100dvh - 86px);overflow:auto;padding:14px;border:1px solid #4c3828;border-radius:16px;background:rgba(255,248,232,.985);box-shadow:0 14px 34px rgba(26,17,10,.42);color:#2b2118}
+.stage-info-game{font-family:serif;font-size:20px;font-weight:900;color:#284859}.stage-info-game span{font-family:system-ui,sans-serif;font-size:12px;opacity:.72}
+.stage-info-title{margin-top:8px;font-size:17px;font-weight:900}.stage-info-description{margin-top:4px;font-size:13px;line-height:1.5;color:#514536}
+.stage-info-status{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.stage-info-status span{padding:4px 8px;border:1px solid #a88e69;border-radius:999px;background:#efe2c8;font-size:12px;font-weight:800}
+.stage-info-objective{margin-top:10px;padding-top:9px;border-top:1px solid #c3ad89;font-size:13px;line-height:1.55;font-weight:700}
+.stage-info-actions{position:sticky;bottom:-14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px -4px -4px;padding:10px 4px 4px;background:linear-gradient(180deg,rgba(255,248,232,0),rgba(255,248,232,.98) 28%)}
+.stage-info-actions button{min-height:46px;border:1px solid #58432f;border-radius:10px;color:#fff;font-weight:900;font-size:13px;box-shadow:0 2px 5px #2f1f1038;pointer-events:auto;transition:transform .08s ease,filter .08s ease,box-shadow .08s ease}
+.stage-info-actions .audio{background:linear-gradient(#745e9c,#4f3d75)}
+.stage-info-actions .restart{background:linear-gradient(#6b5b4d,#43382e)}
+.stage-info-actions .manual-save{background:linear-gradient(#4f8068,#315c48)}
+.stage-info-actions .manual-load{background:linear-gradient(#4c7591,#2e536d)}
+.stage-info-actions button.stage-info-action-armed{filter:brightness(1.22);transform:scale(1.025);box-shadow:0 0 0 3px rgba(255,231,167,.72),0 4px 10px rgba(45,31,17,.35)}
+.stage-info-hint{margin-top:8px;text-align:center;font-size:10px;line-height:1.45;color:#786b58}
+.battle-viewport{position:relative;height:calc(100dvh - 60px);min-height:300px;margin:0;overflow:hidden;isolation:isolate;overflow-anchor:none}
+.board-wrap{position:absolute;inset:0;overflow:auto;min-height:0;margin:0;padding:0;background:transparent;-webkit-overflow-scrolling:touch;overscroll-behavior:auto;touch-action:pan-x pan-y;scrollbar-gutter:auto;overflow-anchor:none}
+.board-scroll-spacer{width:1px;height:0;pointer-events:none;overflow-anchor:none}
+.board{position:relative;display:grid;grid-template-columns:repeat(8,var(--cell));grid-template-rows:repeat(16,var(--cell));width:max-content;margin:0 auto;border:5px solid #49331f;border-radius:12px;overflow:hidden;box-shadow:0 10px 20px #2b1b0c4d}
+.wide-illusion-overlay{position:absolute;pointer-events:none;z-index:14;transform-origin:center center}
+/* v9.7.20：火計発動時は中心対象上へ爆炎を1つだけ従来比1.25倍で大きく表示する。素材自身の透過アニメーションをそのまま再生する。 */
+.fire-tactic-burst-effect{position:absolute;z-index:23;object-fit:contain;transform:translate(-50%,-50%);pointer-events:none;user-select:none;-webkit-user-drag:none;max-width:none;filter:drop-shadow(0 0 9px rgba(255,92,0,.58))}
+.water-tactic-burst-effect{position:absolute;z-index:23;object-fit:contain;transform:translate(-50%,-50%) scale(.84);transform-origin:center center;pointer-events:none;user-select:none;-webkit-user-drag:none;max-width:none;filter:drop-shadow(0 0 10px rgba(100,210,255,.52));animation:waterTacticBurstPulse 960ms ease-out forwards}
+@keyframes waterTacticBurstPulse{0%{opacity:0;transform:translate(-50%,-50%) scale(.78)}18%{opacity:1;transform:translate(-50%,-50%) scale(.96)}62%{opacity:1;transform:translate(-50%,-50%) scale(1.02)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.10)}}
+.wide-illusion-mist,.wide-illusion-skeleton{position:absolute;left:50%;top:50%;max-width:none;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.wide-illusion-mist{width:132%;height:132%;transform:translate(-50%,-42%) scale(.86);opacity:0;filter:drop-shadow(0 0 14px rgba(120,50,220,.50));animation:wideIllusionMist 2.24s ease-out forwards}
+.wide-illusion-skeleton{width:67.2%;height:67.2%;transform:translate(-50%,-54%) scale(.76);opacity:0;filter:drop-shadow(0 0 16px rgba(92,32,184,.42));animation:wideIllusionSkeleton 2.24s ease-out forwards}
+@keyframes wideIllusionMist{0%{opacity:0;transform:translate(-50%,-38%) scale(.42) rotate(0deg)}18%{opacity:.95}62%{opacity:.96;transform:translate(-50%,-44%) scale(1.02) rotate(9deg)}100%{opacity:0;transform:translate(-50%,-48%) scale(1.14) rotate(16deg)}}
+@keyframes wideIllusionSkeleton{0%{opacity:0;transform:translate(-50%,-48%) scale(.36)}22%{opacity:0}34%{opacity:.92;transform:translate(-50%,-54%) scale(.82)}72%{opacity:.96;transform:translate(-50%,-56%) scale(1.00)}100%{opacity:0;transform:translate(-50%,-60%) scale(1.08)}}
+/* v9.7.4：通常幻術成功時のドクロを従来比1.5倍へ拡大。 */
+/* v9.7.3：通常幻術成功時のドクロ。色発光と併用し、対象セル内だけでフェードイン／フェードアウトする。 */
+.normal-illusion-skull-effect{position:absolute;left:50%;top:50%;width:150%;height:150%;object-fit:contain;transform:translate(-50%,-50%);opacity:0;z-index:18;pointer-events:none;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 0 7px rgba(103,35,190,.58));animation:normalIllusionSkullFade 720ms ease-in-out both}
+@keyframes normalIllusionSkullFade{0%{opacity:0}24%{opacity:.96}62%{opacity:.96}100%{opacity:0}}
+/* v9.7.16：撹乱成功記号は1ターン「？」・2ターン「！」とも盤面オーバーレイで表示し、素材側のフェードを生かしながら正確に半マス上へ移動する。 */
+.confusion-symbol-effect{position:absolute;left:0;top:0;object-fit:contain;transform:translate(-50%,-50%);z-index:19;pointer-events:none;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 0 6px rgba(255,196,0,.58));animation:confusionSymbolRise 720ms ease-out both}
+@keyframes confusionSymbolRise{0%{transform:translate(-50%,-50%) translateY(0)}100%{transform:translate(-50%,-50%) translateY(var(--confusion-rise-distance))}}
+/* 第一章専用：8×16の一枚物戦闘マップ背景 */
+/*
+ * 第一章背景画像のトリミング表示（例外対応）
+ *
+ * 画像生成時に、正しい8×16盤面の外側へ
+ * 左0.5マス・右0.5マス・上0.5マス・下1.5マス分の余白が残った。
+ * 本来は画像側で余白を除去すべきだが、画像生成では正確な除去が安定しなかったため、
+ * 第一章に限りCSSで正しい盤面範囲をトリミング表示する。
+ *
+ * 元画像は横9マス×縦18マス相当なので、背景を縦横112.5%へ拡大する。
+ * 左右余白は同量のため横位置は50%。縦余白は上0.5・下1.5なので、
+ * 余剰2マスのうち上側25%を除外する位置として縦位置を25%にする。
+ * 疑似要素自体の大きさは変えず、背景画像だけを補正するため、
+ * 部隊・選択表示・盤面演出のクリップ範囲には影響しない。
+ */
+.board.stage-one-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-one-map-image);background-size:112.5% 112.5%;background-position:50% 25%;background-repeat:no-repeat}
+.board.stage-one-map .cell{z-index:1}
+.board.stage-one-map .cell>svg,.board.stage-one-map .cell>.road{display:none}
+/* 第二章専用：承認済み8×16の一枚物戦闘マップ背景 */
+.board.stage-two-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-two-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
+.board.stage-two-map .cell{z-index:1}
+.board.stage-two-map .cell>svg,.board.stage-two-map .cell>.road{display:none}
+.board.stage-three-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-three-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
+.board.stage-three-map .cell{z-index:1}
+.board.stage-three-map .cell>svg,.board.stage-three-map .cell>.road{display:none}
+/* 第四章専用：添付された8×16の一枚物戦闘マップ背景 */
+.board.stage-four-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-four-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
+.board.stage-four-map .cell{z-index:1}
+.board.stage-four-map .cell>svg,.board.stage-four-map .cell>.road{display:none}
+
+/* 第五章専用：採用済み8×16の一枚物戦闘マップ背景 */
+.board.stage-five-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-five-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
+.board.stage-five-map .cell{z-index:1}
+.board.stage-five-map .cell>svg,.board.stage-five-map .cell>.road{display:none}
+/* 第六章専用：8×20の一枚物戦闘マップ背景 */
+.board.stage-six-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-six-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
+.board.stage-six-map .cell>svg,.board.stage-six-map .cell>.road{display:none}
+/* 第七章専用：採用済み8×20の一枚物戦闘マップ背景 */
+.board.stage-seven-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-seven-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
+.board.stage-seven-map .cell{z-index:1}
+.board.stage-seven-map .cell>svg,.board.stage-seven-map .cell>.road{display:none}
+/* 第八章専用：承認済み8×16の一枚物戦闘マップ背景 */
+.board.stage-eight-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-eight-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
+.board.stage-eight-map .cell{z-index:1}
+.board.stage-eight-map .cell>svg,.board.stage-eight-map .cell>.road{display:none}
+.board.stage-nine-map::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--stage-nine-map-image);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
+.board.stage-nine-map .cell{z-index:1}
+.board.stage-nine-map .cell>svg,.board.stage-nine-map .cell>.road{display:none}
+
+.cell{position:relative;width:var(--cell);height:var(--cell);padding:0;border:1px solid #3d2c1847;background:transparent;overflow:hidden;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none}
+.cell svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.road{z-index:1}.unit{z-index:5;inset:4%!important;width:92%!important;height:92%!important;transform-origin:50% 52%;filter:drop-shadow(0 2px 2px #0005)}
+.unit.face-north{transform:rotate(0)}.unit.face-east{transform:rotate(90deg)}.unit.face-south{transform:rotate(180deg)}.unit.face-west{transform:rotate(270deg)}
+.shadow{position:absolute;left:12%;right:12%;bottom:8%;height:18%;z-index:4;border-radius:50%;background:#19120b47;filter:blur(2px);pointer-events:none}
+.arrow{position:absolute;z-index:8;width:0;height:0;filter:drop-shadow(0 1px 1px #0006);pointer-events:none}
+.arrow.face-north{top:1px;left:calc(50% - 8px);border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:13px solid var(--gold)}
+.arrow.face-east{top:calc(50% - 8px);right:1px;border-top:8px solid transparent;border-bottom:8px solid transparent;border-left:13px solid var(--gold)}
+.arrow.face-south{bottom:1px;left:calc(50% - 8px);border-left:8px solid transparent;border-right:8px solid transparent;border-top:13px solid var(--gold)}
+.arrow.face-west{top:calc(50% - 8px);left:1px;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:13px solid var(--gold)}
+.label{position:absolute;top:2px;left:2px;z-index:9;padding:2px 4px;border:1px solid #2c1f1259;border-radius:6px;background:#fff9ebdd;font-size:10px;font-weight:900;pointer-events:none}
+.hp{position:absolute;left:7%;right:7%;bottom:3px;height:7px;z-index:9;overflow:hidden;border:1px solid #16100aa6;border-radius:999px;background:#19120aa6;pointer-events:none}.hp>div{height:100%;background:linear-gradient(90deg,#3f9c45,#91dd65)}
+.selected{box-shadow:none}
+/* 選択マス表示：薄水色＝未行動の味方、薄オレンジ＝行動済みの味方、白＝敵・空きマス */
+.selection-ring{
+  --selection-ring-color:rgba(255,255,255,.96);
+  position:absolute;inset:9%;z-index:9;border:3px solid var(--selection-ring-color);
+  border-radius:50%;pointer-events:none;opacity:.42;
+  filter:blur(.35px);
+  box-shadow:
+    0 0 4px var(--selection-ring-color),
+    0 0 10px color-mix(in srgb,var(--selection-ring-color) 72%,transparent),
+    inset 0 0 6px color-mix(in srgb,var(--selection-ring-color) 52%,transparent);
+  animation:selectionRingFirefly 1.08s ease-in-out infinite;
+  will-change:opacity,transform,filter
+}
+.selection-ring::before{
+  content:"";position:absolute;inset:-4px;border:3px solid var(--selection-ring-color);
+  border-radius:50%;opacity:.32;filter:blur(2.4px)
+}
+.selection-ring-ready{--selection-ring-color:rgba(174,232,255,.98)}
+.selection-ring-done{--selection-ring-color:rgba(255,205,145,.98)}
+.selection-ring-neutral{--selection-ring-color:rgba(255,255,255,.98)}
+@keyframes selectionRingFirefly{
+  0%,100%{opacity:.30;transform:scale(.955);filter:blur(.55px)}
+  48%,55%{opacity:.88;transform:scale(1.025);filter:blur(.15px)}
+}
+.move{position:absolute;z-index:10;inset:25%;border:3px solid #fffc;border-radius:50%;background:#2173bcc2;box-shadow:0 0 0 2px #1b496e73;pointer-events:none}
+.cost{position:absolute;top:3px;right:3px;z-index:11;min-width:19px;height:19px;padding:0 4px;border-radius:999px;color:#fff;background:#192a3adb;font-size:11px;font-weight:900;line-height:19px;pointer-events:none}
+.attack{position:absolute;z-index:11;inset:12%;border:5px solid #ce3028eb;border-radius:50%;box-shadow:0 0 0 2px #fffb,inset 0 0 12px #d6231c40;pointer-events:none}
+.facing{position:absolute;z-index:11;inset:7%;border:3px dashed #f1be30fa;border-radius:12px;background:#ffd5521a;pointer-events:none}
+.info-layout{display:grid;grid-template-columns:1fr;gap:10px}.command-area{padding:10px;border:1px solid #9e8058;border-radius:12px;background:linear-gradient(180deg,#f7ecd8,#e8d7bb)}.command-dock{position:absolute;left:6px;right:6px;top:var(--command-dock-top,60px);bottom:auto;z-index:48;display:none;width:auto;max-height:calc(100% - var(--command-dock-top,60px) - 6px);margin:0;padding:6px;border:1px solid #9e8058;border-radius:12px;background:rgba(246,237,219,.985);box-shadow:0 8px 20px #2d1d0f45;backdrop-filter:blur(8px);overflow:auto;overscroll-behavior:contain;overflow-anchor:none;pointer-events:none;transform-origin:top center}.command-dock.dock-open{display:block;pointer-events:auto}.command-dock .command-area{padding:7px}.command-dock .commands{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}#unitCommandButtons[hidden]{display:none!important}.command-dock .commands button,.command-dock .command-nav button{min-height:42px;font-size:13px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}.command-dock .command-nav{gap:6px;margin-top:6px}.command-dock .strategy-level-panel{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:0;padding:0;border:0;background:transparent}.info{display:grid;grid-template-columns:108px 1fr;gap:12px;min-height:142px;padding:10px;border:1px solid #bca47e;border-radius:12px;background:linear-gradient(135deg,#fff9,#fff0 55%),#efe3cd}
+.portrait{width:108px;height:128px;border:2px solid #644a2f;border-radius:10px;overflow:hidden;background:#d7c09a;box-shadow:0 3px 8px #0003}.portrait svg{width:100%;height:100%}
+.info-text{line-height:1.55;font-size:14px}.info-text strong{font-size:20px}.unit-alias{margin-right:.45em;font-size:.68em;font-weight:800;opacity:.72;white-space:nowrap}
+
+.selection-info-block{border:1px solid #bca47e;border-radius:12px;background:linear-gradient(135deg,#fff9,#fff0 55%),#efe3cd;overflow:hidden}
+#unitInfoPanel{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+
+/* v9.6.4比較版：通常の部隊情報パネルへ40×48pxのミニ顔画像を追加。絶対配置としてパネル高は変更しない。 */
+#unitInfoPanel .info{position:relative}
+#unitInfoPanel.mini-portrait-right .info{padding-right:62px}
+#unitInfoPanel.mini-portrait-left .info{padding-left:62px}
+.compact-mini-portrait{position:absolute;top:50%;width:40px;height:48px;transform:translateY(-50%);overflow:hidden;border:1px solid #8b6a40;border-radius:6px;background:#d7c09a;box-shadow:0 1px 3px #0003;pointer-events:none}
+#unitInfoPanel.mini-portrait-right .compact-mini-portrait{right:8px}
+#unitInfoPanel.mini-portrait-left .compact-mini-portrait{left:8px}
+.compact-mini-portrait>img,.compact-mini-portrait>svg{display:block;width:100%;height:100%;object-fit:cover;object-position:center center}
+.selection-info-block[hidden]{display:none!important}
+.selection-info-container{margin:0 0 6px;padding:0;display:grid;gap:6px}
+.selection-info-container[hidden]{display:none!important}
+.selection-info-block .info{display:block;min-height:0;padding:7px 9px;border:0;border-radius:0;background:transparent}
+.compact-info-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:13px;font-weight:900;color:#493722;line-height:1.35}
+.compact-info-heading strong{font-size:16px;color:#2c251e}
+.terrain-info-heading{justify-content:flex-start}
+.compact-info-hint{margin-left:auto;color:#725b40;font-size:10px;font-weight:800;white-space:nowrap}
+.compact-info-line{margin-top:3px;font-size:13px;line-height:1.4;color:#3f3428}
+.terrain-info{padding:7px 9px;line-height:1.45;font-size:13px}
+.terrain-info-detail{margin-top:3px;color:#5f4b35}
+.battle-status-log{max-height:calc(100dvh - 150px);min-height:120px;padding:10px 12px;overflow:auto;white-space:pre-line;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.65;border:1px solid #bca47e;border-radius:10px;background:#f4ead8;color:#2f281f}
+
+.commands{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start}.commands button,.command-nav button,.bottom button,.overlay button{min-height:46px;border:1px solid #493722;border-radius:10px;font-weight:900;box-shadow:0 2px 4px #2f1f1029}.command-nav{display:grid;grid-template-columns:84px minmax(0,1fr);gap:8px;align-items:stretch;margin-top:8px}.command-instruction{min-width:0;display:flex;align-items:center;padding:5px 8px;border:1px solid #bca47e;border-radius:9px;background:#fff8e9;color:#493722;font-size:12px;font-weight:800;line-height:1.35}
+.strategy-level-panel{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px;padding:8px;border:1px solid #9574b8;border-radius:11px;background:#efe6f7}
+.strategy-level-panel.show{display:grid}
+.strategy-level-button{min-height:58px;border:1px solid #50366f;border-radius:10px;color:#fff;background:linear-gradient(#8462ad,#56377d);font-weight:900;box-shadow:0 2px 4px #2f1f1029}
+.strategy-level-button b{display:block;font-size:17px}.strategy-level-button span{display:block;margin-top:2px;font-size:10px;font-weight:700}
+.strategy-level-button:disabled{opacity:.45;color:#d7cfdf;background:#77706f}
+@media(max-width:420px){.strategy-level-panel{grid-template-columns:1fr}.strategy-level-button{min-height:48px}}
+.commands button:disabled,.bottom button:disabled{opacity:.6;color:#736b61;background:#d7ccba}.atk{color:#fff;background:linear-gradient(#ad4b3f,#7c2d26)}.bow-skill{color:#fff;background:linear-gradient(#4a7f9f,#28536d)}.charge-skill{color:#fff;background:linear-gradient(#b96a2d,#7d3d17)}.strategy{color:#fff;background:linear-gradient(#7555a2,#4d3475)}.wait{color:#fff;background:linear-gradient(#567f44,#395f2f)}.cancel{background:linear-gradient(#fffaf0,#dfcfb3)}
+.bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}.end{color:#fff;background:linear-gradient(#39779b,#21536f)}
+.end.turn-ready-firefly{
+  position:relative;
+  isolation:isolate;
+  animation:endTurnReadyFirefly 2s ease-in-out infinite;
+  will-change:filter,box-shadow,transform;
+}
+@keyframes endTurnReadyFirefly{
+  0%,100%{
+    filter:brightness(1);
+    box-shadow:0 2px 4px #2f1f1029,0 0 0 rgba(190,239,255,0);
+    transform:scale(1);
+  }
+  48%,56%{
+    filter:brightness(1.16);
+    box-shadow:0 2px 4px #2f1f1029,0 0 7px rgba(213,247,255,.90),0 0 16px rgba(126,220,255,.72);
+    transform:scale(1.012);
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  .end.turn-ready-firefly{
+    animation:none;
+    filter:brightness(1.10);
+    box-shadow:0 2px 4px #2f1f1029,0 0 8px rgba(190,239,255,.78);
+  }
+}
+}.audio{color:#fff;background:linear-gradient(#745e9c,#4f3d75)}.restart{color:#fff;background:linear-gradient(#6b5b4d,#43382e)}
+.log{max-height:135px;overflow:auto;white-space:pre-line;font-family:ui-monospace,monospace;font-size:12px;line-height:1.55}
+.strategy-guide-content{padding:0 14px 14px;border-top:1px solid #b99d73;font-size:13px;line-height:1.65}
+.strategy-guide-content h3{margin:13px 0 4px;font-size:15px;color:#5e3f27}
+.strategy-guide-content p{margin:0}
+.strategy-guide-content ul{margin:4px 0 0;padding-left:1.25em}
+.strategy-guide-content li{margin:3px 0}
+.stage-intro{font-size:13px;line-height:1.6}
+.overlay{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:18px;background:#18120dde;backdrop-filter:blur(5px)}.overlay.show{display:flex}
+.card{width:min(94vw,520px);max-height:90vh;overflow:auto;padding:22px;border:2px solid #83683f;border-radius:20px;text-align:center;background:linear-gradient(135deg,#fff9,#fff0 45%),#fff6e4;box-shadow:0 18px 50px #140d0873}
+.card h2{margin:0 0 8px;font-family:serif;font-size:29px}.stage-list{display:grid;gap:9px;margin:16px 0}.stage-btn{padding:12px!important;text-align:left!important;background:linear-gradient(#426f86,#234b60)!important;color:#fff!important}
+.stage-btn b{display:block;font-size:17px}.stage-btn span{font-size:12px;color:#e8dbc5}.card .main{width:100%;color:#fff;background:linear-gradient(#346f8e,#1f4c65)}
+.stage-load-button{width:100%;margin:14px 0 2px;padding:12px!important;border-color:#4e6c5b!important;color:#fff!important;background:linear-gradient(#527c68,#315744)!important;font-weight:900}
+.result-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.result-buttons button{color:#fff;background:linear-gradient(#346f8e,#1f4c65)}
+
+/* v9.7.45：暗幕は初期表示し、将兵5秒→静止勝利文字5秒→光線3秒の順で表示。完了後はタップまで静止する。 */
+.victory-effect{position:fixed;inset:0;z-index:94;overflow:hidden;opacity:1;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;isolation:isolate;transition:opacity 420ms ease-in}
+.victory-effect-layer{position:absolute;display:block;max-width:none;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.victory-effect-shade{inset:0;z-index:1;background:rgba(0,0,0,.55);opacity:1}
+.victory-effect-army{left:50%;bottom:0;z-index:2;width:min(152vw,142vh);width:min(152vw,142dvh);height:auto;opacity:0;filter:brightness(.93) saturate(.92);transform:translate3d(-50%,4%,0) scale(.985);transform-origin:50% 100%;transition:opacity 5000ms linear,transform 5000ms ease-out}
+.victory-effect.is-army-visible .victory-effect-army{opacity:.86;transform:translate3d(-50%,0,0) scale(1)}
+.victory-effect-title{left:50%;top:48%;z-index:3;width:min(88vw,600px);height:auto;opacity:0;transform:translate(-50%,-50%);filter:drop-shadow(0 5px 8px rgba(50,23,0,.72)) drop-shadow(0 0 12px rgba(255,191,45,.24));transition:opacity 5000ms linear}
+.victory-effect.is-title-visible .victory-effect-title{opacity:1}
+.victory-effect-rays{right:-3%;top:-2%;z-index:4;width:min(148vw,900px);height:auto;opacity:0;filter:brightness(.94) saturate(.90);transition:opacity 3000ms linear}
+.victory-effect.is-rays-visible .victory-effect-rays{opacity:.44}
+.victory-effect-prompt{position:absolute;left:50%;bottom:max(22px,calc(env(safe-area-inset-bottom) + 14px));z-index:5;padding:8px 16px;border:1px solid rgba(255,224,150,.58);border-radius:999px;color:#fff4d2;background:rgba(20,13,7,.58);box-shadow:0 2px 10px rgba(0,0,0,.42);font-size:14px;font-weight:800;letter-spacing:.08em;opacity:0;transform:translateX(-50%);pointer-events:none;white-space:nowrap;transition:opacity 300ms ease-out}
+.victory-effect.is-ready{cursor:pointer}
+.victory-effect.is-ready .victory-effect-prompt{opacity:.92}
+.victory-effect.is-leaving{opacity:0;pointer-events:none}
+@media (orientation:landscape) and (max-height:600px){.victory-effect-title{top:47%;width:min(62vw,72vh)}.victory-effect-army{width:min(112vw,146vh)}.victory-effect-rays{width:min(92vw,138vh)}}
+
+/* v9.7.48：正式採用済みのRGBA透過PNGを本来の透明度で重ね、スクリーン合成は使用しない。 */
+/* v9.7.49：敗残将兵と敗北文字は配置基準を維持したまま表示倍率を2/3へ縮小する。 */
+.defeat-effect-army{left:50%;bottom:0;z-index:2;width:min(152vw,142vh);width:min(152vw,142dvh);height:auto;opacity:0;filter:brightness(.82) saturate(.78);transform:translate3d(-50%,4%,0) scale(.656667);transform-origin:50% 100%;transition:opacity 5000ms linear,transform 5000ms ease-out}
+.defeat-effect.is-army-visible .defeat-effect-army{opacity:.86;transform:translate3d(-50%,0,0) scale(.666667)}
+.defeat-effect-title{left:50%;top:48%;z-index:3;width:min(88vw,600px);height:auto;opacity:0;transform:translate(-50%,-50%) scale(.666667);filter:brightness(.90) saturate(.90) drop-shadow(0 5px 8px rgba(0,14,42,.76)) drop-shadow(0 0 12px rgba(104,178,255,.22));transition:opacity 5000ms linear}
+.defeat-effect.is-title-visible .defeat-effect-title{opacity:.96}
+@media (orientation:landscape) and (max-height:600px){.defeat-effect-title{top:47%;width:min(62vw,72vh)}.defeat-effect-army{width:min(112vw,146vh)}}
+
+/* v9.4.13：第九章へ郁保四の寝返りギミックを追加。第4自軍ターン開始時、郁保四が生存していれば曾頭市軍から梁山泊軍へ所属変更し、そのターンから行動可能。追加の全軍撹乱や能力補正は付けず、郁保四自身の第4.4版能力をそのまま使用する。寝返り後の兵力整合性のため、郁保四は既存の祝家荘内応組と同様に敵として登場する時点から自軍用最大兵力式を使用する。 */
+/* v9.4.12：第九章の仮マップ・仮配置を再調整。8列×20行は維持し、従来の左右端にいた西軍・東軍を北西・北東へ移動、北軍を上中央に置いて、上側三方面軍が2～3ターンで連携しやすい配置へ変更。北西前面に湿地、北東前面に森、上中央前面に丘を置いて少数でも数ターン受けやすい防御帯を強化。敵52隊は中央部へ再配置し、開始直後の盤端追い詰めを緩和。第九章の勝利条件は史文恭撃破ではなく曾頭市軍の殲滅へ変更し、史文恭は早期撃破の価値がある最重要敵将として残す。 */
+/* v9.4.11：第九章「曾頭市・宿命の決戦」を仮マップ・仮配置へ更新。8列×20行の非対称な平原戦マップとし、自軍は原作第二次曾頭市戦の初期31人を東西南北・中軍・後軍・盧俊義別働隊へ仮配置。敵軍は史文恭・曾家勢など9名＋曾頭市一般兵43隊の計52隊を初期配置。秦明が撃破された場合は負傷戦線離脱として扱い、次の自軍ターン開始時に関勝・徐寧・単廷珪・魏定国の4隊が救援到着する仮イベントを追加。第9章参加の項充・李袞に合わせ、既決定仕様の投擲術（弓撃同威力・2回・射程2固定・弓と同演出/SE）と盾牌戦闘（通常/突撃の正面65％・側面90％・背面115％、弓/投擲60％）も実装。敵増援・最終バランスは未確定。 */
+/* v9.4.14：第9章の採用済み美術確認画像を本番戦闘マップ画像として実装。第9章専用 stage-nine-map クラスを追加し、採用画像を単一HTMLへbase64埋め込み。グリッド線のみ除去した画像を使用し、第9章では従来の地形SVG・道路SVGを非表示にする。第9章の地形配列・部隊配置・AI・勝敗条件は変更していない。 */
+/* v9.5.0：第九章「曾頭市・宿命の決戦」を現時点の完成版として確定。採用済み専用顔画像9点（武松・項充・李袞・単廷珪・魏定国・樊瑞・徐寧・時遷・郁保四）を画像辞書へ追加し、第9章の各固有人物へ割り当てた。李袞・徐寧は作り直し後の正式採用画像を使用。第9章の本番マップ、部隊配置、寝返り・援軍等のゲームロジックはv9.4.14を維持し、難易度は今後必要に応じて微調整する。 */
+/* v9.5.1：第9章の難易度調整として敵8隊を追加。A10～A12・H10～H12に左右各1隊のモブ参謀＋歩兵＋弩兵を配置し、B13・G13にモブ隊長を各1隊配置。第9章の本番マップ、既存部隊、寝返り・援軍・勝敗条件は変更していない。初期敵軍は52隊から60隊へ増加。 */
+/* v9.5.2：第9章の敵部隊増加に合わせ、郁保四の寝返り発生を第4自軍ターン開始時から2ターン遅らせ、第6自軍ターン開始時へ変更。寝返り条件・所属変更後の行動可否・能力・兵力式は変更していない。 */
+/* v9.5.3：第9章の郁保四を寝返り発生前まで固定待機へ変更。第1～5敵ターンは移動・攻撃を行わず、第6自軍ターン開始時に生存していれば固定待機を解除して梁山泊へ寝返り、そのターンから行動可能。撃破された場合は従来どおり寝返りは発生しない。 */
+/* v9.4.10：特殊戦法「連環馬」を地形依存の重装騎兵特性として実装。連環馬部隊は移動力3。平地・道では通常攻撃・突撃・弓撃（将来の投擲を含む共通ダメージ系）への被ダメージを20%軽減。湿地では連環馬固有軽減を失い、既存の湿地ペナルティに加えて与ダメージ30%低下・被ダメージ20%増加。森・丘・山岳では連環馬固有の攻防補正なし。火計・水計・幻術など計略系ダメージには連環馬固有補正を適用しない。 */
+/* v9.4.9：戦闘技能を持つだけで通常攻撃へ一律+2していた汎用補正を廃止。武力で評価済みの徒手格闘・相撲などを含め、技能タグそのものでは通常攻撃力を加算しない。弓弩術・騎乗戦闘など各技能固有の既存効果は変更していない。 */
+/* v9.4.8：火計・水計の使用回数を3回から2回へ調整し、中心基礎ダメージを各10低下（火計 143→133、水計 127→117）。周辺65％・地形補正・中心撹乱率・演出・SEは変更していない。 */
+/* v9.4.7：計略エフェクトを統一。効果範囲を白発光した後、撹乱=黄・幻術=紫・火計=赤・水計=水色で対象部隊を発光する。高廉の広域幻術にも自身中心3マスの白発光を追加。火計・水計・突撃で撹乱が新たに成立した場合は固有色/突撃演出の後に黄発光＋撹乱成功SEを再生する。撹乱成功SEは現行成功音を仮使用し、後から差し替え可能な専用メソッドへ共通化。ゲームロジック・能力値・配置・成功率・ダメージは変更していない。 */
+/* v9.4.6：特殊戦法「火計」「水計」を実装。射程3・中心＋上下左右の範囲ダメージ。中心のみ1ターン撹乱判定、周辺65％、味方巻き添えあり。火計は森+20％、水計は湿地・川・川隣接+20％、道-10％。 */
+/* v9.4.5：バックグラウンド退避データは自動復元せず、タイトル演出終了後のステージ選択画面で確認してから読み込む。 */
+.recovery-overlay{z-index:66}
+.recovery-card{width:min(92vw,520px);text-align:left}
+.recovery-card h2{text-align:center}
+.recovery-summary{margin:12px 0;padding:12px 14px;border:1px solid #9d8058;border-radius:12px;background:#f8ecd5;white-space:pre-line;line-height:1.65;font-weight:800}
+.recovery-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.recovery-load{color:#fff;background:linear-gradient(#346f8e,#1f4c65)}
+.recovery-skip{background:linear-gradient(#fffaf0,#dfcfb3)}
+@media(max-width:420px){.recovery-buttons{grid-template-columns:1fr}}
+.save-slot-overlay{z-index:88;align-items:center}
+.save-slot-card{display:flex;flex-direction:column;width:min(94vw,580px);max-height:min(92dvh,820px);padding:16px;text-align:left;overflow:hidden}
+.save-slot-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.save-slot-header h2{margin:0;font-size:25px}
+.save-slot-close{flex:0 0 auto;min-height:38px;padding:7px 13px;background:linear-gradient(#fffaf0,#dfcfb3);font-weight:900}
+.save-slot-instruction{margin:8px 0 10px;font-size:12px;line-height:1.55;color:#5a4938}
+.save-slot-list{display:grid;gap:7px;min-height:0;overflow:auto;padding:2px 3px 4px}
+.save-slot-entry{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px;align-items:center;width:100%;min-height:68px;padding:9px 11px;border:1px solid #6d563a;border-radius:12px;background:linear-gradient(#fffaf0,#ebdbc0);color:#302419;text-align:left;box-shadow:0 2px 5px #2f1f1024}
+.save-slot-entry:not(:disabled):active{transform:translateY(1px)}
+.save-slot-entry:disabled{opacity:.58;filter:saturate(.65)}
+.save-slot-number{display:flex;align-items:center;justify-content:center;align-self:stretch;border-right:1px solid #b79f7e;font-size:15px;font-weight:950;color:#31586d}
+.save-slot-lines{display:grid;gap:3px;min-width:0}
+.save-slot-date{font-size:13px;font-weight:900;line-height:1.35}
+.save-slot-detail{font-size:12px;line-height:1.4;color:#5f4c38}
+.save-slot-entry.is-empty .save-slot-date{color:#756a5b}
+.save-slot-entry.is-temporary{border-color:#8c6e25;background:linear-gradient(#fff8dc,#ead9a2)}
+.save-slot-entry.is-backup{border-color:#6f6a33;background:linear-gradient(#f7f1d2,#ddd4a7)}
+.save-slot-entry.is-corrupt{border-color:#9a5044;background:linear-gradient(#fff0eb,#e9c5bc)}
+.save-slot-entry.is-incompatible{border-color:#70647d;background:linear-gradient(#f5eff9,#d9cee2)}
+@media(max-width:420px){.save-slot-card{padding:13px}.save-slot-entry{grid-template-columns:42px minmax(0,1fr);gap:8px;padding:8px}.save-slot-number{font-size:13px}.save-slot-date{font-size:12px}.save-slot-detail{font-size:11px}}
+.save-status-toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));z-index:90;width:min(92vw,520px);padding:11px 14px;border:1px solid #8d4a3d;border-radius:12px;background:#5f211df2;color:#fff;font-weight:800;line-height:1.45;text-align:center;box-shadow:0 8px 28px #0007;opacity:0;transform:translate(-50%,14px);pointer-events:none;transition:opacity .2s ease,transform .2s ease}
+.save-status-toast.show{opacity:1;transform:translate(-50%,0)}
+
+.troop-marker{
+  position:absolute;inset:8%;z-index:5;pointer-events:none;
+  filter:drop-shadow(0 3px 2px #0005);
+}
+/* v9.3.69：部隊本体は地形を隠しにくい円形とし、向きは黄色い三角矢印だけで示す。 */
+.troop-marker .crest{
+  display:none;
+}
+.troop-marker .body{
+  position:absolute;left:4%;right:4%;top:4%;bottom:4%;
+  border:3px solid #2a2017;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+.troop-marker.player .crest,.troop-marker.player .body{
+  background:linear-gradient(180deg,#e8f4fb 0%,#6ea7cc 42%,#2b6f9e 100%);
+}
+/* v9.4.5：バックグラウンド退避データの自動復元を廃止。
+   タイトル演出終了後のステージ選択画面で、直前の戦闘を読み込むか確認ダイアログを表示する。
+   「読み込む」を選択した場合は、先に対象ステージの戦闘画面へ遷移・初期描画してから、次の描画タイミングで保存盤面・ターン・状態を復元する。
+   「読み込まない」を選択した場合はステージ選択を継続し、別ステージを開始した時点で従来どおり古い退避データを破棄する。
+ */
+/* v9.4.4：第8章の門内追捕隊を増強。
+   門内の空きマスB2・D2・E2・G2へ騎馬隊4隊を追加し、全隊を城門外展開AIの対象とした。
+   門内部隊は門外までの完全な経路が取れない場合でも、D・E列の門路とその手前の空きマスへ、門外方向へ近づくよう順次前詰めする。
+   門内弩隊も、門外へ直接到達できない場合は前詰めを優先し、それもできない場合に弓撃する。
+   第8章以外の部隊配置・AI・勝敗条件・マップ・人物能力データは変更していない。
+
+/* v9.4.1：第7章「高唐州・飛天妖術陣」の幻術戦を強化。
+   高廉は公孫勝が3マス以内にいない場合、自身を中心とする3マス以内の自軍対象全体へ広域幻術を使用する。
+   広域幻術は各部隊ごとに個別成功判定を行い、使用回数を消費しない。公孫勝が高廉の3マス以内にいる間は広域幻術を封じ、従来の単体幻術のみ使用する。
+   幻術士は共通ルールとして幻術の対象外とした。第7章の敗北条件から公孫勝敗走を外し、公孫勝敗走後も戦闘は継続するが広域幻術を封じられない。
+   第7章の作戦条件表示と開始会話も新ルールに合わせて更新。他章の勝敗条件・部隊配置・マップ・人物能力データは変更していない。
+
+   v9.4.0：能力データ正本を第4.4版へ更新し、大名府の主要武将・李成と聞達を固有人物として正式登録。
+   李成は武84・統83・知68・人64、聞達は武82・統81・知60・人60。両者とも戦闘技能は騎乗戦闘、弓弩術なし、特殊戦法・専門技能なし。
+   李成の性格は自負・実直、史実区分は古層資料未確認（モデル説あり）。聞達の性格は勇猛・自負、史実区分は古層資料未確認。
+   CHARACTER_MANAGERは79人となり、第8章の李成・聞達をcreateEnemyCharacterUnit経由へ移行。配置・移動力・向き・敵基礎兵力は変更していない。
+   両者の最大兵力は従来どおり310、突撃は各3回、弓撃は0回。能力値反映に伴い攻撃・防御・計略回数のみ正本第4.4版へ更新した。
+
+   v9.3.104：全9章のExcel登録済み固有人物を、人物管理を使用する固有人物生成メソッドへ移行。
+   v9.3.103以前に移行済みの第8章20人・第9章2人に加え、残る114件の章別直接定義を移行した。
+   固有人物は全章でCHARACTER_MANAGERの同一Characterインスタンスを参照する。
+   Excel未登録の李成・聞達・曾魁・曾密・曾索・曾昇と、ゲーム用仮設定のモブは従来どおり直接定義とする。
+   ユニットID、陣営、配置、移動力、向き、マップ、AI、イベント、勝敗条件は変更していない。
+
+   v9.3.103：第8章のExcel登録済み固有人物20人を、人物管理を使用する固有人物生成メソッドへ移行。
+   自軍19人はcreatePlayerCharacterUnit、敵軍の梁中書はcreateEnemyCharacterUnitを使用する。
+   李成・聞達はExcel未登録のため従来どおり直接定義とし、モブ定義にも触れていない。
+   ユニットID、配置、移動力、向き、自軍・敵軍別の兵力計算、マップ、AI、勝敗条件は変更していない。
+
+   v9.3.102：第9章の呼延灼と史文恭だけを、人物管理を使用する固有人物生成メソッドへ移行。
+   呼延灼はcreatePlayerCharacterUnit、史文恭はcreateEnemyCharacterUnitを使用する。
+   ユニットID、配置、移動力、向き、人物能力、技能、兵力計算結果は従来定義を維持する。
+   第9章の他人物、モブ、Excel未登録人物、マップ、AI、勝敗条件は変更していない。
+
+   v9.3.101：固有人物を人物管理から取得して既存のユニット定義へ変換する、
+   自軍用createPlayerCharacterUnitメソッドと敵軍用createEnemyCharacterUnitメソッドを追加。
+   自軍と敵軍で生成メソッドを分け、兵力は既存の自軍計算・敵軍計算をそれぞれ経由する。
+   現段階では章別ユニット定義から新メソッドを呼んでおらず、ゲーム動作は変更していない。
+
+   v9.3.100：固有人物の章共通データを保持するCharacterクラスと、Characterインスタンスを人物IDで管理するCharacterManagerクラスを追加。
+   正本Excel第4.3版に存在し、現行ゲームまたは会話表示で使用する固有人物77人をCHARACTER_MANAGERへ登録した。
+   Excel未登録の李成・聞達・曾魁・曾密・曾索・曾昇は登録していない。
+   現段階では既存の章別ユニット定義、Unitクラス、兵力計算、ユニット生成処理には接続しておらず、ゲーム動作は変更していない。
+
+   v9.3.99：能力データ正本Excel第4.3版との人物データ同期を実施。
+   対象は呼延灼・李逵・柴進・楊雄・欧鵬・燕青・秦明・鄒淵・鄧飛・史文恭・呉用・宋江・戴宗の全登場定義。
+   能力値、戦闘技能、特殊戦法・異能、専門技能、性格、史実・伝承区分、出典版を正本へ統一した。
+   ただし、現行ゲームに加味しない李逵の「双斧」と燕青の「相撲／徒手格闘」は戦闘技能へ登録していない。
+   Excelに存在しない人物、配置、移動力、向き、顔画像、マップ、AI、勝敗条件は変更していない。
+
+   v9.3.98：第8章の採用済み顔画像のうち、関勝・蔡福を追加実装し、関勝・蔡福・蔡慶・孔明・孔亮の5名を固有顔画像として揃えた。
+   既存のゲームロジック・マップ・部隊構成は変更していない。
+
+   v9.3.97：第8章の採用済み顔画像のうち、蔡慶・孔明・孔亮の3名を固有顔画像として実装。
+   既存のゲームロジック・マップ・部隊構成は変更していない。
+
+   v9.3.96：ブラウザをバックグラウンドへ移した際の停止・破棄対策を追加。
+   非表示中は戦闘演出の待機処理とAudioContextを一時停止し、復帰後に続きから再開する。
+   戦闘状態をlocalStorageへ自動退避し、OSやブラウザがタブを破棄・再読込した場合も直前の盤面から自動復元する。
+   敵ターン途中で復元した場合は、行動済み部隊を再行動させず残りの敵から処理を継続する。 */
+/* v9.3.95：弓撃・撹乱・幻術に城壁による射線遮断を追加。
+   使用者と対象を結ぶ直線上に城壁マスがある場合は対象にできない。
+   撹乱の範囲効果も、術者から城壁で遮られた部隊には届かない。通常攻撃・移動・他技能は変更しない。 */
+/* v9.3.94：第六章の登州組裏切りイベントで、祝家荘軍モブに付与していた2ターン撹乱を1ターンへ短縮。
+   固有人物・モブを問わず、裏切りによる撹乱は全員1ターンに統一。他章・通常の撹乱処理は変更しない。 */
+/* v9.3.93：第八章の城内1～2行目に残っていた空きマスC2・D2・E2・F2へ、城内騎馬隊甲～丁を追加。
+   追加4隊も城外突撃AIの対象とし、D3・E3・D4・E4の城門通路は出撃路として空けたまま維持。 */
+/* v9.3.92：第八章の城内追捕隊が、脱出部隊の密集によって攻撃目標の隣接マスを確保できず停止する問題を修正。
+   城内にいる間はD・E列の城門通路上で、空いている最前方マスへ進む専用経路を使用する。
+   前方が塞がれていても後続は門内へ詰め、通路が空き次第、順次城外へ流れ出る。
+   第八章の地形、画像、部隊配置、勝敗条件、他章は変更していない。 */
+/* v9.3.91：第八章専用の本番戦闘マップ画像を単一HTML内へPNG形式で埋め込み。
+   第八章では既存の地形SVG・道路SVGを非表示にし、8列×16行の完成画像を盤面全体へ等倍表示する。
+   地形配列・部隊配置・勝敗条件・城内敵の突撃AI・他章の内容は変更していない。 */
+/* v9.3.90：第八章の勝利条件を敵軍殲滅から、盧俊義と石秀を南の旗へ脱出させる条件へ戻した。
+ * 敗北条件、地形、部隊配置、城内追捕隊の城外突撃AI、他章は変更していない。
+ */
+/* v9.3.89：第八章のB2・G2へ大名府騎兵庚・辛を追加。
+ * 城内追捕隊は通常の敵より先に、城門へ近い前列から行動する。城内にいる間は弓撃・撹乱より移動を優先し、
+ * D・E列の門を通って城外へ殺到する第八章専用AIとした。地形、味方配置、勝敗条件、他章は変更していない。
+ */
+/* v9.3.88：第八章の外部救援側へ孫立を追加し、関勝隊を関勝・孫立の2隊で表現。
+ * 孫立は関勝に隣接するB16へ配置。地形、既存部隊、敵配置、勝敗条件、他章は変更していない。
+ */
+/* v9.3.87：第八章の脱出側へ孔明・孔亮・鄒淵・鄒潤を追加。
+ * 外部救援側は戴宗を維持したまま関勝を追加し、盤面外の別路軍は会話で表現する。
+ * 地形、敵配置、勝敗条件、他章は変更していない。
+ */
+/* v9.3.82：第八章で追加した門外4部隊について、「伏兵」を兵科・部隊名称として使わない名称へ変更。
+ * また、開始直後の迂回余地を確保するため、4部隊をそれぞれ3マス南へ移動。
+ */
+/* v9.3.83：第八章の勝利条件を南の旗への脱出から敵軍殲滅へ変更。
+ * 敗北条件（呉用・盧俊義・石秀のいずれかが敗走）は維持し、地形・部隊配置・他章は変更していない。
+ */
+/* v9.3.80：第八章の地形を、城内・二重城壁・二列大通り・城外待ち伏せ・二列河川・中央橋・左右湿地渡河点の構成へ更新。
+   第八章の初期部隊配置も、城内追捕隊、城門外伏兵、橋・湿地の封鎖隊、川南側の梁山泊援軍へ再構成。
+   v9.3.79：第1・第4・第7章のリアルタイム合成戦闘BGMを、11.52秒の固定WAV音源へ置き換え。
+   長時間プレイ時にAudioNodeが増加して重くなり、BGMが停止する問題を回避。
+   v9.3.78：第1・第4・第7章の戦闘BGM固定音源化を検討・試作。
+   v9.3.77：第七章の戦闘マップ画像を実装し、ゲームロジック用地形配列を承認済み構成へ更新。
+   v9.3.76：第六章の戦闘マップ画像を実装し、ゲームロジック用地形配列を承認済み構成へ更新。
+   v9.3.75：第五章の戦闘マップ画像を、明るさを少し抑えた本番画像へ差し替え。
+   v9.3.74では第五章の戦闘マップ画像を明るさ調整後の本番画像へ差し替え。
+   v9.3.73では第五章の戦闘マップ画像を差し替え、旗周辺の黄色い強調枠線を削除。
+   なお、濃い赤は上部の敵数表示用 .enemy が部隊マーカーにも適用されていたため、
+   敵数表示のセレクタを #enemyCountText へ限定する。部隊内部の赤い面は維持する。 */
+.troop-marker.enemy .crest,.troop-marker.enemy .body{
+  background:linear-gradient(180deg,#fff0e8 0%,#d77a67 42%,#973a31 100%);
+}
+/* v9.5.19：現在手番で行動済みの部隊は、文字バッジではなく部隊本体の濃色化で示す。 */
+.troop-marker.player.turn-acted .crest,.troop-marker.player.turn-acted .body{
+  background:linear-gradient(180deg,#55778c 0%,#315b78 42%,#183e59 100%);
+}
+.troop-marker.enemy.turn-acted .crest,.troop-marker.enemy.turn-acted .body{
+  background:linear-gradient(180deg,#8b5a50 0%,#6d372f 42%,#4b211c 100%);
+}
+.troop-marker .kanji{
+  color:#fff8e7;font-family:serif;font-weight:1000;
+  font-size:calc(var(--cell) * .34);
+  line-height:1;text-shadow:0 2px 0 #0008;
+}
+.troop-marker .soldiers{
+  position:absolute;left:13%;right:13%;bottom:2%;
+  display:flex;gap:3px;justify-content:center;
+}
+.troop-marker .soldiers i{
+  display:block;width:6px;height:6px;border-radius:50%;
+  background:#f2d7b5;border:1px solid #2a2017;
+}
+
+/* 弓撃：攻撃部隊から対象部隊へ飛ぶ黒い矢筋 */
+.bow-shot-line{
+  position:absolute;
+  z-index:24;
+  height:3px;
+  border-radius:999px;
+  background:#070605;
+  box-shadow:0 0 1px #fff9,0 1px 2px #000b;
+  transform-origin:left center;
+  pointer-events:none;
+  will-change:transform,opacity;
+}
+.bow-shot-line::after{
+  content:"";
+  position:absolute;
+  right:-4px;
+  top:50%;
+  width:8px;
+  height:5px;
+  background:#070605;
+  clip-path:polygon(0 0,100% 50%,0 100%);
+  transform:translateY(-50%);
+}
+
+/* 計略発動予兆：対象マスを白50%で短く1回点滅 */
+.strategy-cast-cell-flash{
+  position:absolute;
+  inset:0;
+  z-index:15;
+  pointer-events:none;
+  background:#fff;
+  opacity:0;
+  animation:strategyCastCellFlash 140ms ease-in-out both;
+}
+@keyframes strategyCastCellFlash{
+  0%,100%{opacity:0}
+  45%,55%{opacity:.5}
+}
+
+/* 戦闘エフェクト：元の部隊マーカーを複製し、部隊の形だけを発光させる */
+.troop-marker.unit-effect-clone{
+  z-index:16!important;
+  pointer-events:none!important;
+  will-change:opacity,filter;
+}
+.troop-marker.unit-effect-hit{
+  animation:unitHitWhiteFlash 480ms linear both;
+}
+.troop-marker.unit-effect-confusion{
+  animation:unitConfusionFirefly 480ms ease-in-out both;
+}
+.troop-marker.unit-effect-illusion{
+  animation:unitIllusionFirefly 480ms ease-in-out both;
+}
+.troop-marker.unit-effect-fire{
+  animation:unitFireTacticGlow 480ms ease-in-out both;
+}
+.troop-marker.unit-effect-water{
+  animation:unitWaterTacticGlow 480ms ease-in-out both;
+}
+@keyframes unitHitWhiteFlash{
+  0%,3%,26%,51%,76%,100%{
+    opacity:0;
+    filter:brightness(1) saturate(1) drop-shadow(0 3px 2px #0005);
+  }
+  11%,19%,59%,67%{
+    opacity:.98;
+    filter:brightness(0) saturate(100%) invert(100%)
+      drop-shadow(0 0 4px #fff) drop-shadow(0 0 9px #fff);
+  }
+}
+@keyframes unitConfusionFirefly{
+  0%,100%{
+    opacity:0;
+    filter:brightness(0) saturate(100%) invert(88%) sepia(81%)
+      saturate(1690%) hue-rotate(347deg) brightness(107%) contrast(104%)
+      drop-shadow(0 0 0 rgba(255,220,62,0));
+  }
+  50%{
+    opacity:.96;
+    filter:brightness(0) saturate(100%) invert(88%) sepia(81%)
+      saturate(1690%) hue-rotate(347deg) brightness(107%) contrast(104%)
+      drop-shadow(0 0 5px rgba(255,220,62,.95))
+      drop-shadow(0 0 12px rgba(255,220,62,.78));
+  }
+}
+@keyframes unitIllusionFirefly{
+  0%,100%{
+    opacity:0;
+    filter:brightness(0) saturate(100%) invert(42%) sepia(95%)
+      saturate(2700%) hue-rotate(246deg) brightness(104%) contrast(108%)
+      drop-shadow(0 0 0 rgba(177,84,255,0));
+  }
+  50%{
+    opacity:.96;
+    filter:brightness(0) saturate(100%) invert(42%) sepia(95%)
+      saturate(2700%) hue-rotate(246deg) brightness(104%) contrast(108%)
+      drop-shadow(0 0 5px rgba(190,100,255,.96))
+      drop-shadow(0 0 12px rgba(151,62,238,.82));
+  }
+}
+@keyframes unitFireTacticGlow{
+  0%,100%{
+    opacity:0;
+    filter:brightness(0) saturate(100%) invert(18%) sepia(97%)
+      saturate(6500%) hue-rotate(356deg) brightness(110%) contrast(118%)
+      drop-shadow(0 0 0 rgba(255,62,40,0));
+  }
+  50%{
+    opacity:.96;
+    filter:brightness(0) saturate(100%) invert(18%) sepia(97%)
+      saturate(6500%) hue-rotate(356deg) brightness(110%) contrast(118%)
+      drop-shadow(0 0 5px rgba(255,75,48,.98))
+      drop-shadow(0 0 12px rgba(230,35,22,.84));
+  }
+}
+@keyframes unitWaterTacticGlow{
+  0%,100%{
+    opacity:0;
+    filter:brightness(0) saturate(100%) invert(78%) sepia(45%)
+      saturate(1760%) hue-rotate(151deg) brightness(109%) contrast(104%)
+      drop-shadow(0 0 0 rgba(92,224,255,0));
+  }
+  50%{
+    opacity:.96;
+    filter:brightness(0) saturate(100%) invert(78%) sepia(45%)
+      saturate(1760%) hue-rotate(151deg) brightness(109%) contrast(104%)
+      drop-shadow(0 0 5px rgba(105,226,255,.98))
+      drop-shadow(0 0 12px rgba(50,185,235,.84));
+  }
+}
+
+/* ダメージ数値：ファミコン・スーファミ期RPG風に跳ね上がり、二度弾んで着地 */
+.damage-popup{
+  position:absolute;
+  left:50%;
+  top:58%;
+  z-index:30;
+  min-width:100%;
+  color:#fff4c9;
+  font-family:"Arial Black","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  font-size:clamp(17px,calc(var(--cell) * .34),25px);
+  font-weight:1000;
+  font-variant-numeric:tabular-nums;
+  line-height:1;
+  text-align:center;
+  letter-spacing:-.04em;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  -webkit-text-stroke:1px #4a130c;
+  text-shadow:
+    0 2px 0 #250704,
+    1px 0 0 #250704,
+    -1px 0 0 #250704,
+    0 -1px 0 #250704,
+    0 0 4px rgba(255,214,116,.65);
+  will-change:transform,opacity;
+  animation:damagePopupBounce 780ms cubic-bezier(.18,.82,.24,1) both;
+}
+@keyframes damagePopupBounce{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) translateY(8px) scale(.42);
+  }
+  8.72%{
+    opacity:1;
+    transform:translate(-50%,-50%) translateY(1px) scale(1.28);
+  }
+  23.54%{
+    opacity:1;
+    transform:translate(-50%,-50%) translateY(-18px) scale(1);
+  }
+  39.23%{
+    opacity:1;
+    transform:translate(-50%,-50%) translateY(-6px) scale(1.07,.88);
+  }
+  48.82%{
+    opacity:1;
+    transform:translate(-50%,-50%) translateY(-13px) scale(.98,1.04);
+  }
+  58.41%{
+    opacity:1;
+    transform:translate(-50%,-50%) translateY(-6px) scale(1.03,.94);
+  }
+  66.26%{
+    opacity:1;
+    transform:translate(-50%,-50%) translateY(-10px) scale(.99,1.02);
+  }
+  74.10%,80.21%,93.03%{
+    opacity:1;
+    transform:translate(-50%,-50%) translateY(-6px) scale(1);
+  }
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) translateY(-6px) scale(1);
+  }
+}
+
+.confusion-mark,.illusion-mark{
+  position:absolute;z-index:17;top:2px;width:18px;height:18px;
+  display:flex;align-items:center;justify-content:center;
+  border:0;background:none;font-weight:1000;line-height:1;text-align:center;
+  pointer-events:none;
+}
+.confusion-mark{
+  left:2px;color:#ffd84d;
+  font-family:Georgia,serif;font-size:18px;
+  text-shadow:0 2px 2px #000,0 0 3px #5a3518;
+  animation:confusionBounce .9s ease-in-out infinite alternate;
+}
+@keyframes confusionBounce{
+  from{transform:translateY(0) rotate(-7deg)}
+  to{transform:translateY(-2px) rotate(7deg)}
+}
+.illusion-mark{
+  right:2px;color:#f5eaff;
+  font-family:"Segoe UI Symbol","Noto Sans Symbols 2",serif;font-size:16px;
+  text-shadow:0 2px 2px #000,0 0 4px #4b2b6d;
+  animation:illusionFloat .8s ease-in-out infinite alternate;
+}
+@keyframes illusionFloat{
+  from{transform:translateY(0) scale(1)}
+  to{transform:translateY(-2px) scale(1.08)}
+}
+.status-turn{
+  position:absolute;z-index:17;bottom:12px;min-width:15px;height:15px;padding:0 3px;
+  border:1px solid #fff9;border-radius:999px;color:#fff;
+  font-size:10px;font-weight:1000;line-height:13px;text-align:center;
+  box-shadow:0 1px 3px #0008;pointer-events:none;
+}
+.confusion-turn{left:2px;background:rgba(138,100,21,.94)}
+.illusion-turn{right:2px;background:rgba(86,55,125,.94)}
+.bottom.two-buttons{grid-template-columns:1fr 1fr}
+
+
+.ability-overlay{
+  position:fixed;inset:0;z-index:85;display:none;align-items:center;justify-content:center;
+  padding:18px;background:rgba(16,12,9,.80);backdrop-filter:blur(5px);touch-action:pan-y;pointer-events:none;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+.ability-overlay.show{display:flex;pointer-events:auto}
+html.longpress-status-open,body.longpress-status-open{
+  overflow:hidden!important;overscroll-behavior:none!important
+}
+body.longpress-status-open .board-wrap{
+  overflow:hidden!important;overscroll-behavior:none!important;
+  touch-action:none!important;-webkit-overflow-scrolling:auto!important
+}
+.ability-card{
+  width:min(94vw,560px);max-height:88vh;overflow:auto;padding:18px;
+  border:2px solid #8a6a40;border-radius:18px;
+  background:linear-gradient(135deg,rgba(255,255,255,.72),transparent 45%),#fff4df;
+  box-shadow:0 18px 55px rgba(0,0,0,.48);text-align:left;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+.ability-head{display:grid;grid-template-columns:135px 1fr;gap:14px;align-items:start}
+.ability-overlay .portrait{width:135px;height:160px}
+.ability-name{font-size:23px;font-weight:1000;line-height:1.25}
+.ability-sub{margin-top:4px;font-size:12px;color:#68543a}
+.ability-detail-lines{margin-top:5px;font-size:13px;line-height:1.42}
+.ability-detail-line{white-space:nowrap}
+.ability-large-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0}
+.ability-large{
+  padding:8px 5px;text-align:center;border:1px solid #b79b70;border-radius:10px;
+  background:#efe0c5;font-size:22px;font-weight:1000
+}
+.ability-large span{display:block;margin-bottom:2px;font-size:11px;font-weight:800;color:#6f593d}
+.ability-traits{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 10px}
+.ability-trait{padding:7px 11px;border:1px solid #8f7048;border-radius:999px;background:#e4ceb0;color:#3f2d1d;font-size:13px;font-weight:1000;line-height:1.2;white-space:nowrap}
+.ability-hint{margin-top:10px;text-align:center;font-size:12px;color:#715b3d;font-weight:800}
+.info-note-compact{margin-top:8px;padding:7px 9px;border-radius:8px;background:#fff8e9;border:1px solid #c9af87;font-weight:800}
+
+@media(max-width:700px){.status{grid-template-columns:1fr auto}.objective{grid-column:1/-1;order:3}.info-layout{grid-template-columns:1fr}.commands{grid-template-columns:repeat(2,minmax(0,1fr))}.info{grid-template-columns:92px 1fr}.portrait{width:92px;height:112px}}
+
+.info{min-height:205px;align-items:start}
+.portrait{height:148px}
+.info-text{font-size:13px}
+.ability-grid{display:grid;grid-template-columns:repeat(4,minmax(48px,1fr));gap:5px;margin:7px 0}
+.ability{padding:5px 3px;text-align:center;border:1px solid #aa8e67;border-radius:7px;background:#fff8e8;font-weight:900}
+.ability span{display:block;font-size:10px;font-weight:700;color:#725b40}
+.unit-meta{margin-top:6px;padding-top:6px;border-top:1px solid #bca47e;font-size:11px;line-height:1.45}
+.status-chip{display:inline-block;margin:2px 3px 0 5px;padding:2px 6px;border-radius:999px;color:#fff;background:#8c4d39;font-size:10px;font-weight:900}
+.strategy-target{position:absolute;z-index:11;inset:12%;border:5px solid rgba(118,70,170,.95);border-radius:50%;box-shadow:0 0 0 2px #fffc,inset 0 0 15px #6f3eb455;pointer-events:none}
+.strategy-target span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:2px 5px;border-radius:999px;color:#fff;background:#5a3482e8;font-size:10px;font-weight:1000}
+.bow-target{position:absolute;z-index:11;inset:10%;border:5px solid rgba(65,137,181,.98);border-radius:50%;box-shadow:0 0 0 2px #fffc,inset 0 0 15px #2b7aa966;pointer-events:none}.charge-target{position:absolute;z-index:11;inset:8%;border:6px double rgba(225,117,34,.98);border-radius:50%;box-shadow:0 0 0 2px #fffc,inset 0 0 18px #d96a245f;pointer-events:none}
+/* 突撃命中時：対象マス内に表示する背景透過の砂埃アニメーション */
+.charge-dust-effect{
+  position:absolute;inset:0;z-index:22;width:100%;height:100%;
+  object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none
+}
+.info-note{margin-top:5px;font-weight:900;color:#4f3724}
+
+
+.ability-overlay{
+  position:fixed;inset:0;z-index:85;display:none;align-items:center;justify-content:center;
+  padding:18px;background:rgba(16,12,9,.80);backdrop-filter:blur(5px);touch-action:pan-y;pointer-events:none;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+.ability-overlay.show{display:flex;pointer-events:auto}
+.ability-card{
+  width:min(94vw,560px);max-height:88vh;overflow:auto;padding:18px;
+  border:2px solid #8a6a40;border-radius:18px;
+  background:linear-gradient(135deg,rgba(255,255,255,.72),transparent 45%),#fff4df;
+  box-shadow:0 18px 55px rgba(0,0,0,.48);text-align:left;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+.ability-head{display:grid;grid-template-columns:135px 1fr;gap:14px;align-items:start}
+.ability-overlay .portrait{width:135px;height:160px}
+.ability-name{font-size:23px;font-weight:1000;line-height:1.25}
+.unit-name-ruby{ruby-position:over;white-space:nowrap}
+.unit-name-ruby rt{font-size:.46em;font-weight:800;line-height:1;color:#6b5135;letter-spacing:.04em}
+.ability-sub{margin-top:4px;font-size:12px;color:#68543a}
+.ability-detail-lines{margin-top:5px;font-size:13px;line-height:1.42}
+.ability-detail-line{white-space:nowrap}
+.ability-large-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0}
+.ability-large{
+  padding:8px 5px;text-align:center;border:1px solid #b79b70;border-radius:10px;
+  background:#efe0c5;font-size:22px;font-weight:1000
+}
+.ability-large span{display:block;margin-bottom:2px;font-size:11px;font-weight:800;color:#6f593d}
+.ability-traits{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 10px}
+.ability-trait{padding:7px 11px;border:1px solid #8f7048;border-radius:999px;background:#e4ceb0;color:#3f2d1d;font-size:13px;font-weight:1000;line-height:1.2;white-space:nowrap}
+.ability-hint{margin-top:10px;text-align:center;font-size:12px;color:#715b3d;font-weight:800}
+.info-note-compact{margin-top:8px;padding:7px 9px;border-radius:8px;background:#fff8e9;border:1px solid #c9af87;font-weight:800}
+
+@media(max-width:700px){.ability-grid{grid-template-columns:repeat(2,1fr)}.info{grid-template-columns:88px 1fr}.portrait{width:88px;height:126px}}
+
+
+/* v9.3.42：全味方行動済み時のターン終了ボタン演出を2秒周期へ変更。発光ピークに合わせて背景を暗くし、外光・内光・文字発光を同期して視認性を向上 */
+/* v9.3.35：弓撃・突撃・計略を含む行動コマンド上段は、操作可能な味方部隊の選択中だけ表示 */
+/* v9.3.35：部隊情報ブロックに残っていた旧レイアウトの最小高さを解除し、下部余白を縮小 */
+/* v9.3.35：選択マス情報を「部隊情報」「地形情報」の縦並びへ再構成。空きマスでは部隊情報欄を非表示にし、地形情報だけを表示 */
+/* v9.3.29：楊志・孫立・祝彪へ弓弩術を追加し、正本Excel第4.3版へ同期 */
+/* v9.3.28：童威・童猛・梁中書・李成・聞達・曾弄・曾家五虎の固有顔画像を実装。高廉を新画像へ差し替え、旧高廉画像を高唐州術師の共通顔へ転用 */
+/* v9.3.27：選択マスへ輪郭をぼかしたホタル点滅リングを追加。未行動味方は薄水色、行動済み味方は薄オレンジ、敵・空きマスは白。行動済みや敵ターン中も表示し、戦闘エフェクト中は一時非表示 */
+/* v9.3.26：穆弘の固有顔画像を実装。敵ターン開始時にも銅鑼SEを再生 */
+/* v9.3.25：第6章へ扈家荘女騎馬隊を復旧。タイトル導入時のホワイトアウト拡大時間を従来の2/3へ短縮し、ロゴ表示・BGM開始・操作受付も連動して前倒し */
+/* v9.3.24：撹乱・幻術の対象決定後、白点滅開始前に選択可能マークを消去。第6章から扈家荘女騎馬隊・最左翼騎馬隊・最右翼騎馬隊を削除。ステージ選択画面から版別説明を完全撤去し、版表示は戦闘画面タイトル横だけに整理 */
+/* v9.3.23：ステージ選択画面の更新履歴長文を撤去。戦闘画面のシナリオ説明末尾から版表記を削除。画面最下部へ体系的な「戦略指南」を追加。移動後に攻撃・技能対象がなく方向指定へ自動移行した場合でも、「戻る」で移動前へ戻せない不具合を修正 */
+/* v9.3.22：採用済みの張横・楊雄・欒廷玉・祝龍・祝虎・祝彪・祝朝奉・顧大嫂・孫新・解珍・解宝・楽和・鄒潤・鄒淵の固有顔画像14点を216×256pxへ整えて実装。画像は単一HTML内へ埋め込み */
+/* v9.3.21：突撃された部隊のマスへ、背景透過70×70pxの砂埃アニメーションを表示。砂埃は突撃音と同時に開始し、固有人物は0.20秒後・モブは0.16秒後の剣撃タイミングでダメージ点滅。味方・敵双方へ適用し、画像は単一HTML内へ埋め込み */
+/* v9.3.20：突撃時、固有人物の掛け声と同時に「極低音地鳴り・最大音量版」を重ねて再生。地鳴りは掛け声開始と同時に鳴り、剣撃タイミングは従来どおり。音源は単一HTML内へ埋め込み */
+/* v9.3.19：第3章の追捕隊出現条件を変更。護送隊を第4自軍ターンまでに壊滅した場合は第5自軍ターン開始時に出現。第5自軍ターン中に壊滅した場合は最後の護送部隊を倒した直後に出現。従来の第5敵ターン開始時の一律出現を廃止 */
+/* v9.3.18：幻術成功専用SEとして「重力魔法1」を採用。幻術成功時のみ紫の成功エフェクト開始と同時に再生。撹乱成功は従来の成功音、失敗時は従来の失敗音を維持。音源は単一HTML内へ埋め込み */
+/* v9.3.17：1マス移動を120msから80msへ高速化。弓撃4連の発射間隔をv9.3.16の2/3へ短縮。掛け声後の剣撃を攻撃0.18秒・突撃0.20秒へ前倒し。撹乱・幻術の白点滅を240msから140msへ短縮し、成功エフェクトへ即座に接続 */
+/* v9.3.16：1マス移動を180msから120msへ高速化。弓撃4連の発射間隔を味方・敵とも半分にし、味方0.00/0.23/0.375/0.48秒、敵0.00/0.09/0.33/0.415秒へ変更 */
+/* v9.3.15：弓撃時、攻撃部隊から対象部隊へ黒い矢筋を4本飛ばす演出を追加。味方は弓撃SE Aの0.00/0.46/0.75/0.96秒、敵はSE Bの0.00/0.18/0.66/0.83秒に同期。最後の矢筋到達後にダメージと命中点滅を表示 */
+/* v9.3.14：撹乱・幻術の成否判定前に、対象マスを白・最大不透明度50%で240msの短い1回点滅。Lv2・Lv3は敵の有無に関係なく効果範囲全マスを点滅し、成功時は続けて従来の黄・紫成功エフェクトを表示 */
+/* v9.3.13：部隊移動を目標マスへの瞬間移動から1マスずつの移動アニメーションへ変更。味方・敵・幻術中の同士討ち移動を1マス約0.18秒で統一し、各マスで歩行SEを再生。歩行SEも砂地を踏む短い「ザッ」音へ刷新 */
+/* v9.3.12：弓撃SEを陣営別に変更。味方は4連A「加速して連射」、敵は4連B「不規則な一斉射」を再生。両音源とも単一HTMLへ埋め込み */
+/* v9.3.11：通常攻撃・突撃の命中SEを、実音源「剣で打ち合う2」から0.5秒重ねて「剣で打ち合う4」を再生する採用版へ差し替え。音源はMP3データとして単一HTML内へ埋め込み */
+/* v9.3.10：通常攻撃・突撃の命中SEを高域の二連金属音へ刷新。短い「キン」から少し高い「キン」へ約0.13秒間隔で鳴らす。突撃は走行感の低音を残しつつ二連金属音を追加 */
+/* v9.3.9：被攻撃時に部隊を白く2回点滅。撹乱成功時は黄色、幻術成功時は紫色で、同じ総時間を使った滑らかな蛍型1回点滅を追加。範囲計略では成功対象を同時点滅 */
+/* v9.3.8：罠・撹乱・幻術の結果会話について自動消去を廃止。プレイヤーが「進む」を押すまで表示を維持し、連続会話は1回押すごとに進行 */
+/* v9.3.7：第7章へ張横を追加。通常罠・妖術罠の発動時に踏んだ人物の反応会話を表示。撹乱・幻術成功時に術者と対象者の成功会話を自動表示 */
+/* v9.3.6：第6章へ戴宗・李俊・穆弘・黄信・張横・張順・白勝を追加。白勝は最右最下へ配置。孫立の承認済み顔画像を実装。攻撃・技能処理後にターン終了ボタンが無効のまま残る不具合を修正 */
+/* v9.3.5：鄧飛・欧鵬・楊林・馬麟の承認済み顔画像を顔中心の216×256へ個別トリミングして実装 */
+/* v9.3.4：薛元輝・温文宝・于直・朱仝・雷横・呂方・郭盛・戴宗・李俊の承認済み顔画像を216×256へ個別トリミングして実装。戴宗・李俊は新画像へ差し替え */
+/* v9.3.3：長押しステータス表示中はページと盤面のスクロール位置を固定。指を動かしても背後画面を動かさず、指を離した時だけ表示を閉じる */
+/* v9.3.2：長押しステータス表示後は、指を動かしても表示を維持し、指を離すかポインター操作が取り消された時だけ閉じる仕様へ修正 */
+/* v9.3.1：第7章へ高唐州歩兵4隊・騎兵2隊・弩兵2隊・後衛術師2隊を追加。中盤平地へ通常罠2個・妖術罠2個をランダム配置し、妖術罠は10ダメージ・幻術1ターン、初回のみ高廉と公孫勝の会話を表示 */
+/* v9.3.0：第7章を全面再設計。8×20へ拡張し、高唐州遠征軍22隊、固有敵将4隊、飛天兵・飛天神兵、少兵力の術師8隊・参謀3隊による飛天妖術陣へ刷新 */
+/* v9.2.2：敵AIの撹乱優先度を武力・知略の差と攻撃可否で調整。武力型は攻撃可能なら攻撃を優先し、攻撃不能時は撹乱を次善策として使用 */
+/* v9.2.1：撹乱・幻術の対象選択を改善。残り2ターンの状態へ無駄な単体上書きを禁止し、範囲撹乱は範囲内に延長可能な対象がいる場合だけ使用可能 */
+/* v9.2.0：第6章大幅アップデート第二弾。第4味方ターン開始時に登州組8人が寝返り、祝家荘軍を撹乱。中央戦域へ経路発動型の隠し罠4個を追加 */
+/* v9.1.1：山野適正の移動効果を第一段階実装。解珍・解宝は平地1・道1・森1・丘陵1・山岳2・湿地2 */
+/* v9.1.0：第6章大幅アップデート第一弾。第6章を8×20へ拡張し、呉用・馬麟・祝朝奉・孫立ら登州組8人を追加。祝家荘本隊を45隊へ増強し、登州組は敵側の潜入待機部隊として固定配置 */
+/* v9.0.15：史文恭・陳達・楊春・董超・薛覇・劉唐・阮小二・阮小五・阮小七・白勝・燕順・王英・鄭天寿・黄信の固有顔画像を追加 */
+/* v9.0.14：弓撃へ正面80％補正を適用。側面・背面は100％のままとする */
+/* v9.0.13：第7章の高唐州守備兵乙を削除し、難易度をさらに緩和 */
+/* v9.0.12：第7章の後衛にいた高唐州隊長2隊を削除し、難易度を緩和 */
+/* v9.0.11：第8章の大名府軍前衛左右へ歩兵隊を各1隊追加 */
+/* v9.0.10：第6章の祝家荘軍へ前衛騎馬隊2隊・後衛弩隊2隊・扈家荘女騎馬隊1隊を追加 */
+/* v9.0.8：第7章の術師2隊・参謀1隊を削減。幻術と撹乱の重複、残りターン上書き方式、状態表示・操作制御を改善 */
+/* v9.0.6：石秀の固有顔画像を追加し、勝敗条件画面の開始ボタン表記を「戦闘開始」へ変更 */
+/* v9.0.5：第7章で高廉の兵力を400へ変更し、術師5隊・参謀2隊・騎馬隊2隊・歩兵隊2隊を追加 */
+.escape-flag{
+  position:absolute;z-index:3;left:38%;top:4%;width:50%;height:78%;pointer-events:none;
+  filter:drop-shadow(0 3px 2px #0006)
+}
+.escape-flag .pole{position:absolute;left:11%;top:3%;bottom:0;width:5px;border-radius:3px;background:#5b3a1f}
+.escape-flag .cloth{
+  position:absolute;left:15%;top:4%;width:68%;height:42%;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid #6c241d;border-left:none;border-radius:0 5px 5px 0;
+  color:#fff8df;background:linear-gradient(135deg,#d8a632,#9b2f28 72%);
+  font-family:serif;font-size:calc(var(--cell)*.22);font-weight:1000;text-shadow:0 1px 2px #000
+}
+.escape-zone{box-shadow:none}
+.dialogue-overlay{
+  position:fixed;inset:0;z-index:95;display:none;align-items:flex-end;justify-content:center;
+  padding:18px;background:linear-gradient(transparent 25%,rgba(12,9,7,.72));backdrop-filter:blur(2px)
+}
+.dialogue-overlay.show{display:flex}
+.dialogue-box{
+  width:min(96vw,720px);display:grid;grid-template-columns:112px 1fr;gap:14px;align-items:stretch;
+  padding:13px;border:2px solid #8b6a3f;border-radius:18px;
+  background:linear-gradient(135deg,#fffaf0,#ead7b7);box-shadow:0 16px 46px #0008
+}
+.dialogue-face{width:112px;height:134px;overflow:hidden;border:2px solid #5d432b;border-radius:11px;background:#d6bd91}
+.dialogue-face svg,.dialogue-face img{width:100%;height:100%;object-fit:cover;display:block}
+.dialogue-body{display:flex;flex-direction:column;min-width:0;text-align:left}
+.dialogue-speaker{font-family:serif;font-size:21px;font-weight:1000;color:#5f281f}
+.dialogue-action{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;color:#fff;background:#6b4a84;font-family:system-ui,sans-serif;font-size:11px;vertical-align:middle}
+.dialogue-text{flex:1;margin-top:8px;font-size:17px;line-height:1.65;font-weight:800;white-space:pre-line}
+.dialogue-next{align-self:flex-end;min-width:112px;min-height:40px;border:1px solid #493722;border-radius:10px;color:#fff;background:linear-gradient(#3e718c,#244d62);font-weight:900}
+.dialogue-next.auto{visibility:hidden}
+@media(max-width:520px){
+  .dialogue-box{grid-template-columns:82px 1fr;gap:10px;padding:10px}
+  .dialogue-face{width:82px;height:104px}
+  .dialogue-speaker{font-size:18px}.dialogue-text{font-size:14px;line-height:1.55}
+}
+
+.mission-overlay{z-index:92}
+.mission-card{width:min(92vw,560px);text-align:left}
+.mission-card h2{text-align:center;margin-bottom:14px}
+.mission-condition{margin:10px 0;padding:13px 14px;border:2px solid;border-radius:13px;background:#fffaf0}
+.mission-condition h3{margin:0 0 7px;font-family:serif;font-size:19px}
+.mission-condition p{margin:0;white-space:pre-line;font-size:15px;line-height:1.65;font-weight:900}
+.mission-condition.victory{border-color:#2f6f4d;background:linear-gradient(135deg,#effaf1,#dcefdc)}
+.mission-condition.victory h3{color:#1f603e}
+.mission-condition.defeat{border-color:#9a3e35;background:linear-gradient(135deg,#fff2ee,#f4d8d2)}
+.mission-condition.defeat h3{color:#8a2f28}
+.mission-start{width:100%;margin-top:12px;color:#fff;background:linear-gradient(#346f8e,#1f4c65)}
+
+@media(max-width:520px){.command-dock{left:4px;right:4px;border-radius:10px}.command-dock .command-area{border-radius:9px}.command-dock .commands{grid-template-columns:repeat(4,minmax(0,1fr))}.command-dock .commands button,.command-dock .command-nav button{min-height:40px;padding:4px 2px;font-size:12px}.command-dock .strategy-level-panel{grid-template-columns:repeat(3,minmax(0,1fr))}.command-dock .strategy-level-button{min-height:42px;padding:4px 2px}.command-dock .strategy-level-button b{font-size:15px}.command-dock .strategy-level-button span{font-size:9px}}
+
+
+
+/* v9.3.58：兵力・統率バランスを調整。自軍最大兵力を100＋統率÷2へ変更。敵軍は従来最大兵力へ統率÷2を10単位で切り上げた値を加算。基礎ダメージで防御側統率を2/3だけ減算する方式へ変更 */
+/* v9.3.63：第三章へ一枚物の戦闘マップ背景画像を実装。第三章のみ従来の地形SVG・道路SVGを非表示化。ただし地形配列の一部に更新漏れが残った。 */
+/* v9.3.65：第三章の地形配列を承認済み8×16構成へ修正。ターンチェンジの銅鑼SEを添付MP3「ata_a19.mp3」の埋め込み音源へ変更。破棄済みv9.3.64は再利用しない。 */
+/* v9.7.27：第三・第六・第九章で共用するstrategy戦闘BGMを、従来0.47の80％である0.376へ低減。 */
+/* v9.3.67：第三・第六・第九章で共用する戦闘BGMの音量を、0.50から0.47へわずかに低減。 */
+/* v9.3.61：第一章背景画像に画像生成由来の盤面外余白が残ったため、第一章に限りCSSで表示範囲をトリミング。左右各0.5マス・上0.5マス・下1.5マスを除外し、背景のみ112.5%へ拡大して横50%・縦25%へ位置補正。地形配列・部隊配置・ゲームロジックは変更しない。 */
+/* v9.3.60：第一章の一枚物背景画像を正式版へ更新し、第一章の地形マップを承認済み8×16構成へ変更。部隊配置・勝敗条件は維持。 */
+/* v9.3.57：敵ターン中にステージ選択へ戻った場合、進行中の非同期戦闘処理をセッション番号で即時無効化し、盤面・ターン・選択状態を破棄。別ステージ開始後に旧戦闘が再開してターンや部隊を動かす不具合を修正 */
+/* v9.3.56：戦闘BGMへステージ別楽曲割当を追加。第3・6・9章は「戦略」、第2・5・8章は「DS-069」、第1・4・7章は従来の戦闘BGMを使用。両楽曲を単一HTMLへ埋め込み、ステージ切替時のフェードとループ再生を実装 */
+/* v9.3.55：採用済み30秒ループ曲をステージ選択専用BGMとして埋め込み。タイトル・ステージ選択・戦闘のBGM切替とフェード制御を追加し、タイトル画面のFan表記をOchiへ変更 */
+/* v9.3.54：全体監査後のリファクタリング版。戦闘計算・盤面セル参照・演出時間・ステージ状態初期化を共通化し、未使用コードを削除。ゲーム仕様・能力値・配置・画像・音声は変更なし */
+/* v9.3.53：通常攻撃・弓撃・突撃・幻術同士討ち・罠のダメージ数値を、対象マス上でポンと跳ね上がり二度弾んで着地する演出として表示 */
+/* v9.3.52：高唐州術師10隊を「高廉食客・術士甲～癸」へ改称。史文恭と高廉の既存採用顔画像を再生成せず、顔が大きく見えるよう近接トリミングへ調整 */
+/* v9.3.51：採用済み官軍参謀9種と低級幻術師の顔画像を216×256へ整えて埋め込み。11隊の参謀部隊を個別役割に応じた顔へ差し替え、高唐州術師6隊を低級幻術師顔へ更新 */
+/* v9.3.50：不足していた標準・若手隊長と標準・中年隊長の採用済み顔画像を216×256へ整えて埋め込み。江州隊長2部隊を標準隊長2種へ差し替え、汎用隊長6種の画像辞書登録を完成 */
+/* v9.3.49：採用済み汎用隊長モブ4種と汎用女騎馬兵の顔画像を216×256へ整えて単一HTMLへ埋め込み。官軍・追捕軍・江州・大名府の隊長5部隊を拡張モブ30パターンの仮割当から隊長専用顔へ差し替え */
+/* v9.3.47：祝家荘専用モブ10種の採用済み顔画像を216×256へ個別トリミングして埋め込み、第6章の祝家荘歩兵・騎兵・弓弩兵・精鋭兵・隊長へ兵科と能力段階に応じて紐付け */
+/* v9.3.48：曾頭市専用モブ顔画像を追加し、第9章の曾頭市兵・守備兵・弩兵・精鋭騎兵へ紐付け。あわせて祝家荘隊長画像を房付き兜版へ差し替え */
+/* v9.3.46：採用済みの飛天歩兵・飛天騎兵・飛天弓弩兵・飛天神兵の専用顔画像を追加し、第7章の該当部隊へ紐付け */
+/* v9.3.45：拡張モブ30パターンを汎用敵兵へ紐付け。能力相関と各章の雰囲気を基準に割当。第6章の全敵兵、第7章の飛天兵、第9章の全敵兵は暫定的に官軍モブ30パターンを流用 */
+/* v9.3.44：拡張モブ30パターンの残り21画像を216×256pxへ個別トリミングして画像辞書へ追加。人物・部隊へのportrait割当は未実施 */
+/* v9.3.43：採用済み基本モブ顔画像9点を画像辞書へ追加。人物・部隊へのportrait割当は未実施 */
+/* v9.3.42：ターン終了ボタンを2秒周期の元のホタル発光へ復元。技能ボタンのhiddenがdisplay:gridで打ち消される不具合を修正し、味方部隊表示時だけ確実に表示 */
+/* v9.3.35：地形情報の直下へ戦況ブロックを移動し、部隊情報・地形情報と同じ情報ブロック形式に統一 */
+/* v9.3.35：生存中の味方部隊が全員行動済みになると、ターン終了ボタンをゆっくりホタル点滅させる案内演出を追加 */
+/* タイトル画面 v9.3.72 */
+.title-screen{position:fixed;inset:0;z-index:5000;overflow:hidden;background:#050608;opacity:1}
+.title-screen.active{display:block}
+.title-screen:not(.active){display:none}
+.title-bg{position:absolute;inset:0;background-image:var(--title-background-image);background-size:cover;background-position:center top;transform:scale(1.04);filter:none}
+.title-vignette{position:absolute;inset:0;background:transparent;pointer-events:none}
+.title-logo-layer{position:absolute;left:50%;top:8.2%;width:min(86vw,630px);transform:translateX(-50%);z-index:2;pointer-events:none}
+.title-logo{display:block;width:100%;height:auto;opacity:0;transform:translateY(14px) scale(.92);filter:drop-shadow(0 4px 4px rgba(0,0,0,.45)) drop-shadow(0 12px 26px rgba(0,0,0,.42))}
+.title-bloom{display:none}
+.title-whiteout{position:absolute;z-index:4;pointer-events:none;opacity:0;left:50%;top:26%;width:220vmax;height:220vmax;border-radius:50%;transform:translate(-50%,-50%) scale(.02);filter:blur(64px);background:radial-gradient(circle at 50% 50%,rgba(255,255,255,1) 0%,rgba(255,255,255,1) 42%,rgba(255,255,255,.98) 56%,rgba(255,255,255,.88) 68%,rgba(255,255,255,.60) 78%,rgba(255,255,255,.30) 86%,rgba(255,255,255,.10) 92%,rgba(255,255,255,0) 98%)}
+.title-lightning{position:absolute;z-index:5;opacity:0;pointer-events:none;width:min(26vw,220px);height:min(48vh,400px)}
+.title-lightning svg{display:block;width:100%;height:100%;overflow:visible}
+.title-lightning.left{left:6%;top:8%;transform:rotate(-8deg)}
+.title-lightning.right{right:6%;top:10%;transform:rotate(10deg) scaleX(-1)}
+.title-lightning .bolt-glow{fill:none;stroke:rgba(170,225,255,.78);stroke-width:18;stroke-linecap:round;stroke-linejoin:round}
+.title-lightning .bolt-main{fill:none;stroke:rgba(255,255,255,.98);stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
+.title-lightning .bolt-branch{fill:none;stroke:rgba(230,247,255,.92);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.title-meta{position:absolute;left:0;right:0;top:max(16px,env(safe-area-inset-top));z-index:6;text-align:center;color:#f1dec1;text-shadow:0 2px 4px rgba(0,0,0,.65);font-weight:800;letter-spacing:.12em;font-size:12px}
+.title-license{position:absolute;left:14px;right:14px;bottom:max(16px,env(safe-area-inset-bottom));z-index:6;color:rgba(255,245,228,.9);font-size:11px;line-height:1.45;text-shadow:0 1px 3px rgba(0,0,0,.75)}
+.title-license .right-note{display:block;text-align:right;opacity:.92}
+.title-prompt{position:absolute;left:50%;bottom:max(72px,calc(env(safe-area-inset-bottom) + 72px));transform:translateX(-50%);z-index:7;padding:10px 18px;border:1px solid rgba(255,239,193,.66);border-radius:999px;background:rgba(13,16,22,.36);backdrop-filter:blur(3px);color:#fff3c9;font-weight:900;font-size:14px;letter-spacing:.16em;text-shadow:0 0 6px rgba(255,227,151,.20),0 1px 3px rgba(0,0,0,.72);opacity:0;pointer-events:none;white-space:nowrap}
+.title-prompt .sub{display:block;margin-top:4px;font-size:10px;letter-spacing:.1em;color:#f6e8c4;opacity:.82;text-align:center}
+.title-screen.ready{cursor:pointer}
+.title-screen.ready .title-prompt{opacity:.35;animation:titlePromptFirefly 2.7s ease-in-out infinite}
+.title-screen.intro .title-bloom{animation:none}
+.title-screen.intro .title-whiteout{animation:titleWhiteoutFlow 3.47s ease-in-out 2.90s forwards}
+.title-screen.intro .title-logo{animation:titleLogoReveal .55s cubic-bezier(.18,.7,.2,1) 5.80s forwards}
+.title-screen.intro .title-lightning.left{animation:titleLightningBurstReal .92s ease-out .20s 2}
+.title-screen.intro .title-lightning.right{animation:titleLightningBurstReal .88s ease-out .62s 2}
+.title-screen.leaving{opacity:0;transition:opacity .45s ease;pointer-events:none}
+@keyframes titleWhiteoutFlow{0%{opacity:0;transform:translate(-50%,-50%) scale(.02)}11%{opacity:.03;transform:translate(-50%,-50%) scale(.05)}25%{opacity:.12;transform:translate(-50%,-50%) scale(.11)}42%{opacity:.30;transform:translate(-50%,-50%) scale(.24)}57%{opacity:.56;transform:translate(-50%,-50%) scale(.48)}70%{opacity:.84;transform:translate(-50%,-50%) scale(.78)}77%{opacity:.96;transform:translate(-50%,-50%) scale(1.00)}82%{opacity:1;transform:translate(-50%,-50%) scale(1.10)}92%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.18)}}
+@keyframes titleLogoReveal{0%{opacity:0;transform:translateY(8px) scale(.97);filter:brightness(.95) drop-shadow(0 4px 4px rgba(0,0,0,.30)) drop-shadow(0 12px 26px rgba(0,0,0,.28))}30%{opacity:.10}65%{opacity:.96;transform:translateY(0) scale(1.01);filter:brightness(1.06) drop-shadow(0 0 12px rgba(255,243,188,.22)) drop-shadow(0 12px 28px rgba(0,0,0,.34))}100%{opacity:1;transform:translateY(0) scale(1);filter:brightness(1) drop-shadow(0 4px 4px rgba(0,0,0,.34)) drop-shadow(0 12px 26px rgba(0,0,0,.32))}}
+@keyframes titleLightningBurstReal{0%{opacity:0;filter:brightness(.9)}8%{opacity:1;filter:brightness(1.55)}16%{opacity:.22}28%{opacity:.96;filter:brightness(1.35)}42%{opacity:.14}55%{opacity:.82}72%{opacity:.20}100%{opacity:0;filter:brightness(.95)}}
+@keyframes titlePromptFirefly{0%{opacity:.28;text-shadow:0 0 2px rgba(255,227,151,.06),0 1px 3px rgba(0,0,0,.72);transform:translateX(-50%) scale(.995)}18%{opacity:.42}34%{opacity:.68;text-shadow:0 0 8px rgba(255,227,151,.16),0 1px 3px rgba(0,0,0,.72)}48%{opacity:.92;text-shadow:0 0 14px rgba(255,227,151,.24),0 1px 3px rgba(0,0,0,.72);transform:translateX(-50%) scale(1.008)}62%{opacity:.56}78%{opacity:.82;text-shadow:0 0 10px rgba(255,227,151,.18),0 1px 3px rgba(0,0,0,.72)}100%{opacity:.30;text-shadow:0 0 2px rgba(255,227,151,.06),0 1px 3px rgba(0,0,0,.72);transform:translateX(-50%) scale(.995)}}
+@media (min-width:720px){.title-logo-layer{top:8%}.title-meta{font-size:13px}.title-prompt{font-size:15px}}
+/* v9.3.35：行動コマンド上段の表示判定を修正。操作中または情報表示中の味方部隊だけに表示し、行動済み・行動不能でも弓撃・突撃・計略の残り回数を確認可能にした */
+</style>
+</head>
+<body>
+
+<div id="titleScreen" class="title-screen active" aria-label="タイトル画面">
+  <div class="title-bg"></div>
+  <div class="title-vignette"></div>
+  <div class="title-logo-layer"><img id="titleLogo" class="title-logo" alt="戦旗水滸伝"></div>
+  <div id="titleBloom" class="title-bloom"></div>
+  <div id="titleWhiteout" class="title-whiteout"></div>
+  <div class="title-lightning left" aria-hidden="true"><svg viewBox="0 0 180 380" xmlns="http://www.w3.org/2000/svg"><defs><filter id="lightningGlowL" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path class="bolt-glow" filter="url(#lightningGlowL)" d="M102 4 C99 24 86 44 92 64 C97 79 119 80 110 102 C98 127 108 143 95 165 C81 188 89 201 78 226 C69 247 76 265 63 292 C56 307 59 332 50 360"/><path class="bolt-main" d="M102 4 C99 24 86 44 92 64 C97 79 119 80 110 102 C98 127 108 143 95 165 C81 188 89 201 78 226 C69 247 76 265 63 292 C56 307 59 332 50 360"/><path class="bolt-branch" d="M96 112 C76 133 78 149 62 172"/><path class="bolt-branch" d="M81 228 C100 251 101 269 87 296"/></svg></div>
+  <div class="title-lightning right" aria-hidden="true"><svg viewBox="0 0 180 380" xmlns="http://www.w3.org/2000/svg"><defs><filter id="lightningGlowR" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path class="bolt-glow" filter="url(#lightningGlowR)" d="M104 6 C99 28 87 50 93 70 C97 86 121 89 111 112 C100 137 109 149 96 171 C84 191 91 205 80 230 C70 252 77 270 65 298 C59 312 63 336 55 364"/><path class="bolt-main" d="M104 6 C99 28 87 50 93 70 C97 86 121 89 111 112 C100 137 109 149 96 171 C84 191 91 205 80 230 C70 252 77 270 65 298 C59 312 63 336 55 364"/><path class="bolt-branch" d="M98 118 C116 140 116 155 130 176"/><path class="bolt-branch" d="M82 234 C64 257 62 276 48 301"/></svg></div>
+  <div class="title-meta">SENKI SUIKODEN / 戦旗水滸伝 / PROTOTYPE BUILD</div>
+  <div class="title-license">Based on the classic novel “Shuihu Zhuan” / Tactical Story Prototype / Mobile Portrait Layout<br><span class="right-note">© 2026 Ochi-made Prototype</span></div>
+  <div id="titlePrompt" class="title-prompt" aria-hidden="true">TAP HERE TO START<span class="sub">Touch Here to Start</span></div>
+</div>
+<main class="app">
+<header class="header stage-header-source" aria-hidden="true">
+  <h1>戦旗水滸伝 <span style="font-size:.58em;opacity:.82">v9.7.74</span></h1>
+  <div id="stageTitle" class="sub">ステージ選択</div>
+</header>
+
+<div id="battleTopZone" class="battle-top-zone">
+<section class="panel battle-summary-panel" aria-label="戦闘概要">
+  <div class="battle-summary">
+    <div class="battle-summary-status">
+      <div class="battle-summary-main">
+        <div id="turnText" class="turn">味方ターン</div>
+        <div id="phaseText" class="turn-progress">1 / 15</div>
+      </div>
+      <div id="autoSaveStoppedNotice" class="auto-save-stopped-notice" role="status" aria-live="polite" aria-hidden="true" title="別のタブで自動復元データが更新されたため、このタブの自動保存を停止しています。" hidden>自動保存停止中</div>
+      <div class="unit-count-stack" aria-label="生存部隊数">
+        <div id="playerCountText">味方 0</div>
+        <div id="enemyCountText" class="enemy">敵 0</div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<section id="battleViewport" class="battle-viewport" aria-label="戦闘マップ領域">
+  <div id="battleActionButtons" class="battle-summary-buttons" hidden>
+    <button id="stageInfoButton" class="stage-info-button" type="button" aria-controls="stageInfoOverlay" aria-expanded="false">ステージ情報</button>
+    <button id="battleStatusButton" class="battle-status-button" type="button" aria-controls="battleStatusOverlay" aria-expanded="false">戦況</button>
+    <button id="strategyGuideButton" class="strategy-guide-button" type="button" aria-controls="strategyGuideOverlay" aria-expanded="false">戦術指南</button>
+    <button id="endTurnButton" class="battle-end-button end" type="button">ターン終了</button>
+  </div>
+  <section id="boardScroll" class="board-wrap">
+    <div id="boardTopSpacer" class="board-scroll-spacer" aria-hidden="true"></div>
+    <div id="board" class="board"></div>
+    <div id="boardBottomSpacer" class="board-scroll-spacer" aria-hidden="true"></div>
+  </section>
+
+  <section id="commandDock" class="command-dock" aria-label="選択部隊操作" aria-hidden="true">
+  <div id="selectionInfoContainer" class="selection-info-container" hidden aria-label="選択情報">
+    <div id="terrainInfoPanel" class="selection-info-block" hidden>
+      <div id="terrainInfo" class="terrain-info"></div>
+    </div>
+    <div id="unitInfoPanel" class="selection-info-block mini-portrait-right" hidden>
+      <div class="info"><div id="unitInfo" class="info-text"></div></div>
+    </div>
+  </div>
+  <div id="commandArea" class="command-area" hidden>
+    <div id="unitCommandButtons" class="commands" hidden>
+      <button id="bowButton" class="bow-skill" disabled>弓撃</button>
+      <button id="chargeButton" class="charge-skill" disabled>突撃</button>
+      <button id="strategyButton" class="strategy" disabled>計略</button>
+      <button id="waitButton" class="wait" disabled>待機</button>
+    </div>
+    <div id="strategyLevelPanel" class="strategy-level-panel" aria-hidden="true">
+      <button class="strategy-level-button" data-strategy-level="1"><b>Lv1</b><span>単体／消費1</span></button>
+      <button class="strategy-level-button" data-strategy-level="2"><b>Lv2</b><span>周囲1マス／消費2</span></button>
+      <button class="strategy-level-button" data-strategy-level="3"><b>Lv3</b><span>周囲2マス／消費3</span></button>
+    </div>
+    <div class="command-nav">
+      <button id="cancelButton" class="cancel" disabled>戻る</button>
+      <div id="commandInstructionText" class="command-instruction" aria-live="polite"></div>
+    </div>
+  </div>
+  </section>
+</section>
+
+</main>
+
+<!-- v9.5.9：戦況もステージ情報と同様の一時表示とし、味方ターン中のみ開ける。 -->
+<!-- v9.5.7：ステージ情報と部隊能力詳細はタップで閉じる一時表示。敵ターン中は新規表示を禁止する。 -->
+<!-- v9.5.6：戦闘中の章説明・勝敗条件は常時表示せず、ステージ情報ボタンで一時オーバーレイを開き、画面タップで閉じる。 -->
+<div id="stageInfoOverlay" class="stage-info-overlay" aria-hidden="true">
+  <div class="stage-info-card">
+    <div class="stage-info-game">戦旗水滸伝 <span>v9.7.74</span></div>
+    <div id="stageInfoTitle" class="stage-info-title"></div>
+    <div id="stageInfoDescription" class="stage-info-description"></div>
+    <div class="stage-info-status">
+      <span id="stageInfoTurn"></span>
+      <span id="stageInfoPhase"></span>
+      <span id="stageInfoEnemy"></span>
+    </div>
+    <div id="objectiveText" class="stage-info-objective"></div>
+    <div class="stage-info-actions" aria-label="ステージ操作">
+      <button id="audioButton" class="audio" type="button">音声：ON</button>
+      <button id="restartButton" class="restart" type="button">ステージ選択</button>
+      <button id="manualSaveButton" class="manual-save" type="button">セーブ</button>
+      <button id="manualLoadButton" class="manual-load" type="button">ロード</button>
+    </div>
+    <div class="stage-info-hint">ボタン以外の画面をタップすると閉じます／各操作はボタンをタップして選択します</div>
+  </div>
+</div>
+
+<div id="battleStatusOverlay" class="stage-info-overlay" aria-hidden="true">
+  <div class="stage-info-card">
+    <div class="stage-info-game">戦旗水滸伝 <span>v9.7.74</span></div>
+    <div class="stage-info-title">戦況</div>
+    <div id="log" class="battle-status-log"></div>
+    <div class="stage-info-hint">画面をタップすると閉じます</div>
+  </div>
+</div>
+
+<div id="strategyGuideOverlay" class="stage-info-overlay" aria-hidden="true">
+  <div class="stage-info-card">
+    <div class="stage-info-game">戦旗水滸伝 <span>v9.7.74</span></div>
+    <div class="stage-info-title">戦術指南</div>
+    <div class="strategy-guide-content">
+      <h3>基本操作</h3>
+      <ul>
+        <li>タップしたマスには柔らかく点滅する輪が表示されます。未行動の味方は薄水色、行動済みの味方は薄オレンジ、敵部隊と空きマスは白です。</li>
+        <li>味方部隊をタップすると選択し、青い印のマスをタップすると移動します。</li>
+        <li>赤い印の敵をタップすると通常攻撃します。盤面の部隊または部隊情報を長押しすると能力・技能の詳細を確認できます。</li>
+        <li>行動を確定する前なら「戻る」で一つ前の選択へ戻れます。攻撃や技能を実行した後は取り消せません。</li>
+      </ul>
+
+      <h3>1部隊の行動手順</h3>
+      <p>部隊選択 → 移動後は、攻撃・技能・計略または黄色い方向枠を直接選べます。黄色い方向枠を選ぶと、その方向を向いて行動を終了します。隣接する敵をタップした場合は通常攻撃を優先します。敵の方向へ攻撃せず向きたい場合や、移動せずその場で方向転換したい場合は「待機」を選び、最後に向きを指定してください。</p>
+
+      <h3>攻撃と戦闘技能</h3>
+      <ul>
+        <li><strong>通常攻撃：</strong>隣接する敵へ攻撃します。攻撃方向によってダメージ補正が変わります。</li>
+        <li><strong>弓撃：</strong>弓撃を使える各部隊が、1戦闘につき2回使用できます。射程2～3マス、隣接・壁越しには攻撃できません。通常攻撃相当のダメージを与えます。</li>
+        <li><strong>投擲：</strong>投擲を使える各部隊が、1戦闘につき2回使用できます。射程2マス固定、隣接・壁越しには攻撃できません。弓撃と同じダメージです。</li>
+        <li><strong>突撃：</strong>隣接する敵へ、通常攻撃より大きなダメージを与えます。統率が高い部隊ほど使用回数が増え、対象の統率に応じて最大25％で撹乱させることがあります。</li>
+      </ul>
+
+      <h3>向きと攻撃補正</h3>
+      <ul>
+        <li><strong>通常攻撃・突撃：</strong>盾牌を持たない部隊は正面80％・側面100％・背面120％です。敵の側面・背面を取るほど有利になります。</li>
+        <li><strong>弓撃・投擲：</strong>盾牌を持たない部隊は正面80％・側面100％・背面100％です。背面からでも追加の威力上昇はありません。</li>
+        <li><strong>盾牌：</strong>上記の補正に追加で軽減するのではなく、方向補正・弓投擲補正そのものを置き換えます。通常攻撃・突撃は正面65％・側面90％・背面115％、弓撃・投擲は方向に関係なく60％になります。</li>
+        <li>行動終了時に指定する向きは、次に攻撃を受ける際の正面・側面・背面判定に影響します。</li>
+      </ul>
+
+      <h3>計略</h3>
+      <ul>
+        <li>撹乱・幻術・火計・水計はいずれも射程3マスで、城壁越しには使用できません。使用回数は部隊ごとに管理され、残り回数は行動コマンドや部隊詳細で確認できます。</li>
+        <li><strong>撹乱：</strong>敵の行動を妨げます。使用者と対象の知略差によって成功率が変わり、成功すると1～2ターン継続します。知略50以上でLv1、90以上でLv2、97以上でLv3まで使用でき、Lv1は敵1隊、Lv2は中心と隣接1マス、Lv3は中心から2マス以内が効果範囲です。使用時は選んだLvと同じ回数を消費します。</li>
+        <li><strong>幻術：</strong>幻術士が使用できます。対象の知略が低いほど成功しやすく、成功すると1～2ターン継続します。対象を惑わせ、次の行動を自動化し、可能なら味方へ移動して同士討ちさせます。</li>
+        <li><strong>火計：</strong>敵1隊を中心に、中心と上下左右へ範囲ダメージを与えます。周辺は中心の65％、味方も巻き添えになります。中心だけ低確率で撹乱判定を行い、成功時は1ターンです。森ではダメージ+20％、道では-10％です。</li>
+        <li><strong>水計：</strong>敵1隊を中心に、中心と上下左右へ範囲ダメージを与えます。周辺は中心の65％、味方も巻き添えになります。中心だけ低確率で撹乱判定を行い、成功時は1ターンです。湿地・川・川に隣接するマスではダメージ+20％、道では-10％です。</li>
+        <li>火計・水計の地形補正はダメージだけに適用します。使用者は通常の撹乱を使用できません。</li>
+      </ul>
+
+      <h3>状態異常</h3>
+      <ul>
+        <li><strong>撹乱：</strong>効果が残っている部隊は手動操作できず、その行動は休みになります。</li>
+        <li><strong>幻術：</strong>効果が残っている部隊は手動操作できず、次の行動が自動処理されます。届く味方がいれば移動して同士討ちし、攻撃できる味方がいなければ行動不能になります。</li>
+        <li>撹乱と幻術が重なっている場合は幻術が優先されます。</li>
+      </ul>
+
+      <h3>特殊技能</h3>
+      <ul>
+        <li><strong>水軍適正：</strong>川へ進入できます。川・湿地は移動1となり、湿地の攻撃・防御上の不利を受けません。</li>
+        <li><strong>山野適正：</strong>森・丘陵は移動1、山岳・湿地は移動2となり、悪路での移動力低下を軽減します。</li>
+        <li><strong>盾牌：</strong>追加のダメージ軽減を重ねる技能ではなく、通常の方向補正・弓投擲補正を専用値へ変更します。通常攻撃・突撃は正面65％・側面90％・背面115％、弓撃・投擲は方向に関係なく60％です。火計・水計など計略には影響しません。</li>
+        <li><strong>幻術士：</strong>計略「幻術」を使用できます。敵の幻術の対象にならず、妖術罠へ進入した場合は術理を見破って罠を無効化し、ダメージ・幻術効果を受けません。</li>
+        <li><strong>連環馬：</strong>平地・道では通常攻撃・突撃・弓撃・投擲の被ダメージを20％軽減します。湿地ではこの軽減を失い、通常の湿地不利に加えて与ダメージ30％低下・被ダメージ20％増加となります。森・丘陵・山岳では連環馬固有の攻防補正はありません。火計・水計など計略にも連環馬固有補正は適用されません。</li>
+      </ul>
+
+      <h3>罠</h3>
+      <ul>
+        <li>隠し罠は移動先だけでなく、移動経路の途中でも発動し、その地点で移動を止めて行動終了となります。</li>
+        <li><strong>通常罠：</strong>ダメージを受け、生存していれば1ターン撹乱状態になります。</li>
+        <li><strong>妖術罠：</strong>ダメージを受け、生存していれば1ターン幻術状態になります。</li>
+        <li><strong>幻術士と妖術罠：</strong>妖術罠を見破って無効化します。ダメージ・幻術効果を受けず、罠は消滅しますが、その地点で行動終了となります。</li>
+      </ul>
+
+      <h3>地形と移動</h3>
+      <ul>
+        <li>森・丘陵・山岳は移動しにくい一方、防御に役立ちます。城壁は通行できません。</li>
+        <li>湿地は通常部隊に不利です。水軍適正を持つ部隊は川や湿地を有利に移動できます。</li>
+      </ul>
+
+      <h3>ターンと勝敗条件</h3>
+      <ul>
+        <li>行動済みの部隊は、現在の手番中だけ味方は濃い青、敵は濃い赤で表示されます。未行動部隊を残してターン終了する場合は確認が表示されます。</li>
+        <li>第1～5章は15ターン、第6・8・9章は20ターン、第7章は18ターンが上限です。最終ターン終了までに勝利条件を達成できない場合は敗北となります。</li>
+        <li>章説明・勝利条件・敗北条件は「ステージ情報」、戦闘履歴は「戦況」、操作方法・ルールは「戦術指南」から確認できます。いずれも味方ターン中だけ開け、画面タップで閉じます。ステージ情報では音声・ステージ選択・セーブ・ロードも操作できます。</li>
+      </ul>
+    </div>
+    <div class="stage-info-hint">画面をタップすると閉じます</div>
+  </div>
+</div>
+
+<div id="stageOverlay" class="overlay show">
+  <div class="card">
+    <h2>ステージ選択</h2>
+    <p class="stage-intro"><strong>戦旗水滸伝</strong>――百八星の英傑たちを率いる、スマートフォン縦画面向けの戦術物語。全9ステージから戦う章を選択してください。</p>
+    <button id="stageSelectLoadButton" class="stage-load-button" type="button">ロード選択</button>
+    <div id="stageList" class="stage-list"></div>
+  </div>
+</div>
+
+<div id="recoveryOverlay" class="overlay recovery-overlay" aria-hidden="true">
+  <div class="card recovery-card">
+    <h2>前回の戦闘を読み込みますか？</h2>
+    <p>直前に退避された戦闘データがあります。</p>
+    <div id="recoverySummary" class="recovery-summary"></div>
+    <div class="recovery-buttons">
+      <button id="recoveryLoadButton" class="recovery-load">読み込む</button>
+      <button id="recoverySkipButton" class="recovery-skip">読み込まない</button>
+    </div>
+  </div>
+</div>
+
+<!-- v9.7.43 Android実機回帰確認項目（公開前）：画面幅420px以下を含む20枠表示とスクロール、新規／上書き、HTML再起動後の保持、両入口からのロード、確認取消、起動時復元確認中の別タブ更新検出、手動ロード後の自動復元更新、破損／中断／バックアップ表示、複数タブ競合後の自動保存停止常設表示。 -->
+<div id="saveSlotOverlay" class="overlay save-slot-overlay" aria-hidden="true">
+  <div class="card save-slot-card" role="dialog" aria-modal="true" aria-labelledby="saveSlotTitle">
+    <div class="save-slot-header">
+      <h2 id="saveSlotTitle">セーブ選択</h2>
+      <button id="saveSlotCloseButton" class="save-slot-close" type="button">閉じる</button>
+    </div>
+    <p id="saveSlotInstruction" class="save-slot-instruction"></p>
+    <div id="saveSlotList" class="save-slot-list" aria-live="polite"></div>
+  </div>
+</div>
+
+<div id="saveStatusToast" class="save-status-toast" role="status" aria-live="polite"></div>
+
+
+<div id="abilityOverlay" class="ability-overlay" aria-hidden="true">
+  <div id="abilityCard" class="ability-card"></div>
+</div>
+
+
+<div id="dialogueOverlay" class="dialogue-overlay" aria-hidden="true">
+  <div class="dialogue-box">
+    <div id="dialogueFace" class="dialogue-face"></div>
+    <div class="dialogue-body">
+      <div><span id="dialogueSpeaker" class="dialogue-speaker"></span><span id="dialogueAction" class="dialogue-action"></span></div>
+      <div id="dialogueText" class="dialogue-text"></div>
+      <button id="dialogueNext" class="dialogue-next">進む</button>
+    </div>
+  </div>
+</div>
+
+<div id="missionOverlay" class="overlay mission-overlay" aria-hidden="true">
+  <div class="card mission-card">
+    <h2>作戦条件</h2>
+    <div class="mission-condition victory">
+      <h3>勝利条件</h3>
+      <p id="missionVictoryText"></p>
+    </div>
+    <div class="mission-condition defeat">
+      <h3>敗北条件</h3>
+      <p id="missionDefeatText"></p>
+    </div>
+    <button id="missionStartButton" class="mission-start">戦闘開始</button>
+  </div>
+</div>
+
+<div id="resultOverlay" class="overlay">
+  <div class="card">
+    <h2 id="resultTitle">勝利</h2>
+    <p id="resultMessage"></p>
+    <div class="result-buttons">
+      <button id="nextStageButton">次のステージ</button>
+      <button id="selectStageButton">ステージ選択</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="stage-map-assets.js"></script>
+<script src="portrait-assets.js"></script>
+<script src="screen-assets.js"></script>
+<script src="battle-effect-assets.js"></script>
+<script src="audio-assets.js"></script>
+<script src="game.js"></script>
+
+</body>
+</html>
