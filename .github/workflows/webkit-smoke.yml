@@ -1,0 +1,98 @@
+name: WebKit iPhone smoke test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  webkit-iphone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Set up Playwright WebKit
+        run: |
+          npm init -y
+          npm install playwright@1.57.0
+          npx playwright install --with-deps webkit
+
+      - name: Test public game with iPhone-sized WebKit
+        run: |
+          cat > smoke.cjs <<'EOF'
+          const { webkit, devices } = require('playwright');
+
+          (async () => {
+            const errors = [];
+            const browser = await webkit.launch({ headless: true });
+            const context = await browser.newContext({ ...devices['iPhone 15'] });
+            const page = await context.newPage();
+            page.on('pageerror', error => errors.push(String(error)));
+            page.on('console', msg => {
+              if (msg.type() === 'error') errors.push(`console: ${msg.text()}`);
+            });
+
+            const response = await page.goto('https://ko-q.github.io/senki-suikoden/', {
+              waitUntil: 'load',
+              timeout: 120000
+            });
+            if (!response || !response.ok()) throw new Error(`HTTP status: ${response && response.status()}`);
+
+            const title = await page.title();
+            if (!title.includes('戦旗水滸伝')) throw new Error(`Unexpected title: ${title}`);
+
+            await page.locator('#titleScreen').tap();
+            await page.waitForTimeout(1200);
+
+            const stageButtons = page.locator('#stageList button');
+            const stageCount = await stageButtons.count();
+            if (stageCount < 9) throw new Error(`Stage buttons: ${stageCount}`);
+
+            await stageButtons.nth(2).tap();
+            await page.waitForTimeout(1200);
+
+            const missionStart = page.locator('#missionStartButton');
+            if (await missionStart.isVisible()) {
+              await missionStart.tap();
+              await page.waitForTimeout(1000);
+            }
+
+            const boardClass = await page.locator('#board').getAttribute('class');
+            if (!boardClass || !boardClass.includes('stage-three-map')) {
+              throw new Error(`Chapter 3 board class missing: ${boardClass}`);
+            }
+
+            const cellCount = await page.locator('#board .cell').count();
+            if (cellCount !== 128) throw new Error(`Chapter 3 cell count: ${cellCount}`);
+
+            const background = await page.evaluate(() => getComputedStyle(document.querySelector('#board'), '::before').backgroundImage);
+            if (!background || background === 'none' || !background.includes('data:image/')) {
+              throw new Error(`Chapter 3 background missing: ${String(background).slice(0, 120)}`);
+            }
+
+            await page.screenshot({ path: 'webkit-iphone-stage3.png', fullPage: true });
+
+            if (errors.length) {
+              throw new Error(`WebKit errors:\n${errors.join('\n')}`);
+            }
+
+            console.log('PASS: WebKit iPhone smoke test');
+            console.log(`Title: ${title}`);
+            console.log(`Stage buttons: ${stageCount}`);
+            console.log(`Chapter 3 cells: ${cellCount}`);
+            console.log(`Chapter 3 background length: ${background.length}`);
+
+            await browser.close();
+          })().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          EOF
+          node smoke.cjs
+
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webkit-iphone-stage3
+          path: webkit-iphone-stage3.png
+          if-no-files-found: ignore
