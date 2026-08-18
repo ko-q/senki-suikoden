@@ -17,6 +17,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Publish pending smoke status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="pending" \
+            -f context="webkit-iphone-smoke" \
+            -f description="WebKit iPhone smoke test running" \
+            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
       - name: Set up Playwright WebKit
         run: |
           npm init -y
@@ -73,7 +83,6 @@ jobs:
               throw new Error(`GitHub Pages not updated: expected '${expectedTitle}', got '${publicTitle}'`);
             }
 
-            // タイトル画面は1回目のタップで約6.77秒の導入演出を開始し、ready後の2回目で閉じる。
             const titleScreen = page.locator('#titleScreen');
             await titleScreen.tap();
             await page.locator('#titleScreen.ready').waitFor({ state: 'visible', timeout: 15000 });
@@ -85,7 +94,6 @@ jobs:
             const stageCount = await stageButtons.count();
             if (stageCount !== 9) throw new Error(`Stage buttons: ${stageCount}`);
 
-            // localStorageがiOS系WebKit相当でも通常利用できることを確認。
             const storageOk = await page.evaluate(() => {
               const key = '__senki_webkit_smoke__';
               localStorage.setItem(key, 'ok');
@@ -95,7 +103,6 @@ jobs:
             });
             if (!storageOk) throw new Error('localStorage read/write failed');
 
-            // 第3章をUIから選択。loadStage直後に盤面は生成され、その後イントロ会話→作戦条件へ進む。
             await stageButtons.nth(2).tap();
             await page.locator('#board.stage-three-map').waitFor({ state: 'attached', timeout: 15000 });
 
@@ -110,7 +117,6 @@ jobs:
               throw new Error(`Chapter 3 background missing: ${String(background).slice(0, 120)}`);
             }
 
-            // 第3章イントロ会話を通常UIで最後まで進める。
             for (let i = 0; i < 12; i++) {
               const next = page.locator('#dialogueNext');
               if (!(await next.isVisible())) break;
